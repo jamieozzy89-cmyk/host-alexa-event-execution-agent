@@ -1,0 +1,57 @@
+name: Stage 09 hardening verification
+on:
+  push:
+    branches: [stage09-hardening]
+    paths:
+      - '.stage09-trigger'
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: stage09-hardening
+      - name: Apply controlled hardening transformation
+        run: python .stage09-apply.py
+      - name: Add accessibility test dependency and Stage 09 package metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --save-dev --save-exact @axe-core/playwright@4.13.0
+          npm pkg set version=0.9.0
+          npm pkg set scripts.verify:stage09='npm test && npm run build:web && npm run test:web'
+      - name: Enforce expected source-change boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          changed="$(git diff --name-only | sort)"
+          printf '%s\n' "$changed"
+          test -z "$(printf '%s\n' "$changed" | grep -Ev '^(index.html|package-lock.json|package.json|tests/web/voice-ui.spec.ts|web/main.ts|web/render.ts|web/styles.css)$' || true)"
+      - name: Install Chromium with system libraries
+        run: npx playwright install --with-deps chromium
+      - name: Verify backend and production build
+        run: |
+          npm test
+          npm run build:web
+      - name: Verify complete touch, voice, accessibility and hardening browser suite
+        run: npm run test:web
+      - name: Security and application-boundary checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm audit --omit=dev
+          ! grep -RInE '\.innerHTML|insertAdjacentHTML|document\.write' web
+          ! grep -RInE 'HostDomainEngine|validateHostState' web
+          ! grep -RInE 'from "\.\./src/domain|from "\.\./src/persistence|from "\.\./src/tools' web
+      - name: Commit verified Stage 09 hardening source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html package.json package-lock.json web/main.ts web/render.ts web/styles.css tests/web/voice-ui.spec.ts
+          git commit -m "Harden Stage 09 browser experience"
+          git push origin HEAD:stage09-hardening
