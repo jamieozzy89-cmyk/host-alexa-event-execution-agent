@@ -1,0 +1,48 @@
+name: Publish Stage 05 verified checkpoint
+on:
+  push:
+    branches: [stage05-rebuild]
+    paths:
+      - '.stage05-release-trigger'
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 569c267c2bbd22be255043975b6eaad7d1c1e415
+          fetch-depth: 1
+      - name: Reverify exact checkpoint
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "569c267c2bbd22be255043975b6eaad7d1c1e415"
+          test "$(git rev-parse HEAD^{tree})" = "af46b488acb34b75893642889ca6992577f2cc00"
+          npm ci --ignore-scripts
+          npm test
+      - name: Build tracked-source archive
+        run: |
+          set -euo pipefail
+          git archive --format=tar.gz --prefix=HOST_ALEXA_STAGE05_VERIFIED_569c267/ -o HOST_ALEXA_STAGE05_VERIFIED_569c267.tar.gz HEAD
+          sha256sum HOST_ALEXA_STAGE05_VERIFIED_569c267.tar.gz > HOST_ALEXA_STAGE05_VERIFIED_569c267.SHA256
+      - name: Publish checkpoint release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          cat > release-notes.md <<'EOF'
+          Verified Stage 05 agent/orchestrator checkpoint.
+
+          Commit: 569c267c2bbd22be255043975b6eaad7d1c1e415
+          Tree: af46b488acb34b75893642889ca6992577f2cc00
+          Verification: npm ci + 72/72 tests passed before publication and again in the clean candidate gate.
+
+          This checkpoint includes the controlled agent/orchestrator, validated model boundary, authoritative tool/persistence/domain layers, tests, public documentation and MIT licence. It does not claim the Stage 06 UI, Stage 07 voice layer, live external LLM integration, AWS integration, deployment, or submission media.
+          EOF
+          gh release create stage05-verified-2026-09-01 \
+            HOST_ALEXA_STAGE05_VERIFIED_569c267.tar.gz \
+            HOST_ALEXA_STAGE05_VERIFIED_569c267.SHA256 \
+            --target 569c267c2bbd22be255043975b6eaad7d1c1e415 \
+            --title "Stage 05 Verified Checkpoint" \
+            --notes-file release-notes.md
