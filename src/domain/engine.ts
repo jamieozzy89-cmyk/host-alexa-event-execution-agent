@@ -14,6 +14,7 @@ import type {
   Menu,
   PreparationTask,
 } from "./types.js";
+import { validateHostState } from "./state-validation.js";
 import { assertMenuSatisfiesConstraints, validateConstraint, validateEventCreateInput, validateMenu } from "./validation.js";
 
 const ALLOWED_TRANSITIONS: Record<EventStatus, EventStatus[]> = {
@@ -42,9 +43,10 @@ function revisionChecked(event: EventRecord, expectedRevision: number): void {
 
 export class HostDomainEngine {
   private state: HostState;
-  private readonly pendingImpacts = new Map<string, ChangeImpact>();
+  private pendingImpacts: Map<string, ChangeImpact>;
 
   constructor(input: EventCreateInput, createdAt = nowIso()) {
+    this.pendingImpacts = new Map<string, ChangeImpact>();
     validateEventCreateInput(input);
     const event: EventRecord = {
       id: input.id,
@@ -91,6 +93,14 @@ export class HostDomainEngine {
       result: "succeeded",
       delta: `Created event for ${event.guestCount} guests.`,
     });
+  }
+
+  static restore(committedState: HostState): HostDomainEngine {
+    validateHostState(committedState);
+    const engine = Object.create(HostDomainEngine.prototype) as HostDomainEngine;
+    engine.state = clone(committedState);
+    engine.pendingImpacts = new Map<string, ChangeImpact>();
+    return engine;
   }
 
   snapshot(): HostState {
@@ -150,6 +160,7 @@ export class HostDomainEngine {
   }
 
   commitMenu(menu: Menu, expectedRevision: number, confirmedAt?: string): HostState {
+    revisionChecked(this.state.event, expectedRevision);
     validateMenu(menu);
     assertMenuSatisfiesConstraints(menu, this.state.event.constraints);
     return this.commitMutation({
@@ -167,6 +178,7 @@ export class HostDomainEngine {
   }
 
   addConstraints(constraints: Constraint[], expectedRevision: number): HostState {
+    revisionChecked(this.state.event, expectedRevision);
     for (const constraint of constraints) validateConstraint(constraint);
     const byId = new Map(this.state.event.constraints.map((constraint) => [constraint.id, constraint]));
     for (const constraint of constraints) byId.set(constraint.id, clone(constraint));
@@ -188,6 +200,7 @@ export class HostDomainEngine {
   }
 
   recordInventory(items: InventoryItem[], expectedRevision: number): HostState {
+    revisionChecked(this.state.event, expectedRevision);
     for (const item of items) {
       if (!Number.isFinite(item.quantity) || item.quantity < 0) {
         throw new DomainError(`Inventory quantity for ${item.itemId} must be non-negative.`, "INVALID_INPUT");
@@ -205,6 +218,7 @@ export class HostDomainEngine {
   }
 
   calculateShoppingPlan(expectedRevision: number): HostState {
+    revisionChecked(this.state.event, expectedRevision);
     const selected = this.state.event.selectedMenuId;
     if (!selected) throw new DomainError("A menu must be committed before shopping can be calculated.", "MENU_REQUIRED");
     const menu = this.state.menus[selected];
@@ -221,6 +235,7 @@ export class HostDomainEngine {
   }
 
   buildPreparationPlan(expectedRevision: number): HostState {
+    revisionChecked(this.state.event, expectedRevision);
     const selected = this.state.event.selectedMenuId;
     if (!selected) throw new DomainError("A menu must be committed before preparation can be planned.", "MENU_REQUIRED");
     const menu = this.state.menus[selected];
@@ -237,6 +252,7 @@ export class HostDomainEngine {
   }
 
   markTaskComplete(taskId: string, expectedRevision: number, completedAt = nowIso()): HostState {
+    revisionChecked(this.state.event, expectedRevision);
     const current = this.state.tasks[taskId];
     if (!current) throw new DomainError(`Task ${taskId} does not exist.`, "TASK_NOT_FOUND");
     const incompleteDependencies = current.dependencies.filter((id) => this.state.tasks[id]?.status !== "done");
@@ -265,6 +281,7 @@ export class HostDomainEngine {
   }
 
   advanceEventStatus(nextStatus: EventStatus, expectedRevision: number, confirmedAt?: string): HostState {
+    revisionChecked(this.state.event, expectedRevision);
     const currentStatus = this.state.event.status;
     if (!ALLOWED_TRANSITIONS[currentStatus].includes(nextStatus)) {
       throw new DomainError(`Invalid event transition: ${currentStatus} -> ${nextStatus}.`, "INVALID_STATE_TRANSITION");
