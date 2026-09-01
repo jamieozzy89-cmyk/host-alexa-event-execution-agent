@@ -41,10 +41,11 @@ function rememberCards(cards: AgentCard[]): void {
   }
 }
 
-function applyReply(reply: AgentReply, options: { transcript?: boolean; live?: boolean } = {}): void {
+function applyReply(reply: AgentReply, options: { transcript?: boolean; live?: boolean; activity?: boolean } = {}): void {
   if (reply.eventId) runtime.rememberEvent(reply.eventId);
   rememberCards(reply.cards);
   if (options.live) state.liveReply = reply;
+  if (options.activity) state.activityReply = reply;
   if (options.transcript !== false) {
     state.transcript.push({
       id: nextTranscriptId(),
@@ -102,7 +103,11 @@ async function performAction(action: AgentAction): Promise<void> {
       applyReply(next, { transcript: false, live: true });
       return;
     }
-    applyReply(first, { transcript: state.mode === "conversation", live: state.mode === "live" });
+    applyReply(first, {
+      transcript: state.mode === "conversation",
+      live: state.mode === "live",
+      activity: state.mode === "activity",
+    });
   });
 }
 
@@ -121,7 +126,7 @@ async function switchMode(mode: ViewMode): Promise<void> {
     }
     if (mode === "activity") {
       const reply = await runtime.agent.handleAction(conversationId, { type: "request", label: "View history", request: "history" });
-      applyReply(reply, { transcript: false });
+      applyReply(reply, { transcript: false, activity: true });
     }
   });
 }
