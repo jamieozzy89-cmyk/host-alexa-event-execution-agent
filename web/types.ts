@@ -31,12 +31,18 @@ export interface LatestCards {
   error?: Extract<AgentCard, { type: "error" }>;
 }
 
+export type BrowserStorageMode = "persistent" | "memory";
+
 export interface HostUiState {
   transcript: TranscriptEntry[];
   latest: LatestCards;
   mode: ViewMode;
   busy: boolean;
   voice: VoiceUiState;
+  storageMode: BrowserStorageMode;
+  clearDataPending: boolean;
+  recoveryNotice?: string;
+  dialogReturnFocusKey?: string;
   expandedCard?: AgentCard;
   liveReply?: AgentReply;
   activityReply?: AgentReply;
