@@ -22,8 +22,6 @@ Successful GitHub Actions hardening run:
 
 `33557794389`
 
-That run verified the hardening implementation after fixing defects exposed by the expanded browser suite.
-
 Results:
 
 - backend/application tests: **74 passed, 0 failed**;
@@ -157,17 +155,33 @@ The source audit also identified that the Vite build used the default root-relat
 
 Stage 09 changes Vite `base` to `./` so static assets are referenced relative to `index.html`.
 
-This change was requalified through the same full Stage 09 test/security gate. Successful portable-base workflow: `33559155046`.
+Successful portable-build full requalification workflow:
 
-## Frozen pre-portable deployment build
+`33559155046`
 
-For provenance during deployment investigation, the corrected commit `6ff654b5…` was built cleanly and produced:
+The same Stage 09 test/security gate passed after this change.
 
-- `dist-web/index.html` — SHA-256 `fd6f706743ea6cf70e9895e9595c01c6e86571c1933b93acadf3838095985d6a`
-- `dist-web/assets/index-D-2zrBXm.js` — SHA-256 `b8cd39633194de5b1d66875f27ad3d251cf98c1d705b2350336e39fee761e670`
-- `dist-web/assets/index-h3_c-4TC.css` — SHA-256 `fe5019d5e1beccb9d601b2a2cba5ff2d85f9bd9fe34e9036e7b4e6b6addf0511`
+## Clean release-candidate verification
 
-Those hashes describe that intermediate build only; the final portable-base release build will have different `index.html`/bundle hashes if content changes.
+The permanent Stage 09 product/test/documentation blobs were assembled directly on top of Stage 08 `main`, excluding all temporary Stage 09 transformation scripts, triggers and verification workflows.
+
+Clean candidate commit:
+
+`7498cbe7e10fbe6df068d7eb91e9793c06284c79`
+
+Clean release verification workflow:
+
+`33560083418`
+
+That exact release candidate passed:
+
+- dependency/Chromium installation;
+- **74/74** backend/application tests;
+- production web build;
+- **26/26** browser touch/voice/hardening cases;
+- production dependency audit;
+- injection/direct-domain boundary scans;
+- clean-tree checks confirming Stage 09 development workflows/scripts were absent from the candidate.
 
 ## Dependency/licence observations
 
@@ -204,12 +218,12 @@ Vercel is connected, but the exposed chat deployment tool currently has a contra
 
 GitHub Pages is currently disabled. Initial enablement through `actions/configure-pages` requires a token other than normal `GITHUB_TOKEN` with administration/pages permissions; that credential is not available here.
 
-The Stage 09 build is being made path-portable and reproducible, but a public hosted URL must not be claimed until one of those deployment control paths becomes available and is smoke-tested.
+The Stage 09 build is path-portable and reproducible, but a public hosted URL must not be claimed until one of those deployment control paths becomes available and is smoke-tested.
 
 ## Completion boundary
 
-The portable-base requalification succeeded. Stage 09 hardening functionality is therefore verified.
+Stage 09 hardening functionality and its clean release candidate are verified.
 
 Stage 09 as a whole retains one unresolved external item until a hosted deployment can be created and smoke-tested: **deployment**.
 
-This report now records the portable-base success. It still must be updated with an eventual hosted deployment URL/evidence before claiming complete Stage 09 closure.
+Do not claim complete Stage 09 closure or a deployment URL until that external item is actually resolved.
