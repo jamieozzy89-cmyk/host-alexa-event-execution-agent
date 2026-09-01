@@ -1,6 +1,6 @@
 # Stage 10 — Controlled Submission Checklist
 
-Status at creation: Stage 09 product is published and verified; Stage 10 materials are being prepared; hosted deployment and demo video remain pending.
+Current status: Stage 09 product is published and verified; Stage 10 narrative, feedback, friction, video plan and real application screenshots are prepared; hosted deployment, final visual audit, public demo video and Devpost submission remain pending.
 
 ## A. Product/repository gate
 
@@ -41,7 +41,7 @@ Status at creation: Stage 09 product is published and verified; Stage 10 materia
 - [x] Public repo URL recorded.
 - [x] GitHub username recorded.
 - [x] Contribution URL recorded.
-- [x] Open Source what/how/why response prepared.
+- [x] Open Source what/how/why response prepared and refreshed to Stage 09 evidence.
 - [ ] Recheck Open Source form fields immediately before final submission.
 - [ ] Select Open Source mini challenge in Devpost.
 - [ ] Do not select AWS Builder unless a real AWS implementation is later added and verified.
@@ -67,16 +67,21 @@ Status at creation: Stage 09 product is published and verified; Stage 10 materia
 ## F. Screenshots / gallery
 
 - [x] Controlled shot list prepared.
-- [ ] Capture hero event-state image.
-- [ ] Capture menu/confirmation image.
-- [ ] Capture authoritative shopping image.
-- [ ] Capture Live Mode image.
-- [ ] Capture late-change impact image.
-- [ ] Capture Activity receipts image.
-- [ ] Capture voice-state image if visually useful.
-- [ ] Capture one mobile image.
-- [ ] Audit every final image for legibility and false-integration implications.
-- [ ] Select strongest gallery order.
+- [x] Reproducible Playwright capture script prepared.
+- [x] Capture hero event-state image from the real application.
+- [x] Capture menu/confirmation image from the real application.
+- [x] Capture authoritative shopping image from the real application.
+- [x] Capture Live Mode image from the real application.
+- [x] Capture late-change impact image from the real application.
+- [x] Capture Activity receipts image from the real application.
+- [x] Capture one mobile Live image from the real application.
+- [x] Validate all seven captured files as PNGs with expected dimensions.
+- [x] Record URLs/captions/proposed order in `submission/GALLERY_INDEX_STAGE10.md`.
+- [ ] Capture a dedicated voice-state image only if visual review shows it adds more value than the current seven images.
+- [ ] Perform human/visual audit of every final image for legibility, clipping, transient UI and false-integration implications.
+- [ ] Lock strongest final gallery order/crops after visual audit.
+
+Successful gallery workflow: `33564617297`.
 
 ## G. Demo video
 
@@ -120,5 +125,6 @@ Status at creation: Stage 09 product is published and verified; Stage 10 materia
 - [ ] Verify all simulated-commerce language remains explicit.
 - [ ] Verify test counts quoted in submission match the final release evidence.
 - [ ] Verify screenshots/video show actual product behavior.
+- [ ] Remove or deliberately retain Stage 10 temporary capture workflow/trigger before merging permanent submission materials.
 - [ ] Submit before deadline.
 - [ ] Reopen submitted project page and verify saved content/media after submission.
