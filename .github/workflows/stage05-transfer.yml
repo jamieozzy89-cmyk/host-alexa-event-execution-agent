@@ -1,0 +1,33 @@
+name: Prepare Stage 05 sandbox transfer
+on:
+  push:
+    branches: [stage05-rebuild]
+    paths:
+      - '.stage05-transfer-trigger'
+permissions:
+  contents: write
+jobs:
+  transfer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Build exact verified source transfer
+        shell: bash
+        run: |
+          set -euo pipefail
+          git cat-file -e 569c267c2bbd22be255043975b6eaad7d1c1e415^{commit}
+          test "$(git show -s --format=%T 569c267c2bbd22be255043975b6eaad7d1c1e415)" = "af46b488acb34b75893642889ca6992577f2cc00"
+          git archive --format=tar.gz --prefix=HOST_ALEXA_STAGE05_VERIFIED_569c267/ -o /tmp/HOST_ALEXA_STAGE05_VERIFIED_569c267.tar.gz 569c267c2bbd22be255043975b6eaad7d1c1e415
+          sha256sum /tmp/HOST_ALEXA_STAGE05_VERIFIED_569c267.tar.gz | awk '{print $1}' > .stage05-source-569c267.sha256
+          base64 -w 0 /tmp/HOST_ALEXA_STAGE05_VERIFIED_569c267.tar.gz > .stage05-source-569c267.tar.gz.b64
+      - name: Commit transfer payload to isolated branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .stage05-source-569c267.sha256 .stage05-source-569c267.tar.gz.b64
+          git commit -m "Prepare exact Stage 05 sandbox transfer"
+          git push origin HEAD:stage05-rebuild
