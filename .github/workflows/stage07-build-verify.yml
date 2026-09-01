@@ -1,0 +1,467 @@
+name: Stage 07 voice build and verification
+on:
+  push:
+    branches: [stage07-voice]
+    paths:
+      - '.stage07-build-trigger'
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: stage07-voice
+
+      - name: Apply exact Stage 07 voice candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import json
+
+          def replace_once(path: str, old: str, new: str):
+              p = Path(path)
+              text = p.read_text()
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{path}: expected one source match, found {count}')
+              p.write_text(text.replace(old, new))
+
+          # Agent intent/type surface: spoken menu selection remains routed through requestMenuCommit.
+          replace_once(
+              'src/agent/types.ts',
+              '  | "create_event" | "status" | "next_action" | "menu_options" | "shopping" | "products"\n',
+              '  | "create_event" | "status" | "next_action" | "menu_options" | "choose_menu" | "shopping" | "products"\n',
+          )
+          replace_once('src/agent/types.ts', '  taskId?: string;\n', '  taskId?: string;\n  menuIndex?: number;\n')
+          replace_once('src/agent/types.ts', '  hasPendingConfirmation: boolean;\n', '  hasPendingConfirmation: boolean;\n  hasMenuOptions: boolean;\n')
+
+          replace_once(
+              'src/agent/model.ts',
+              '  "create_event", "status", "next_action", "menu_options", "shopping", "products", "checkout", "prep",\n',
+              '  "create_event", "status", "next_action", "menu_options", "choose_menu", "shopping", "products", "checkout", "prep",\n',
+          )
+          replace_once('src/agent/model.ts', '  const taskId = optionalString(value, "taskId");\n', '  const taskId = optionalString(value, "taskId");\n  const menuIndex = optionalNumber(value, "menuIndex");\n')
+          replace_once('src/agent/model.ts', '  if (taskId) slots.taskId = taskId;\n', '  if (taskId) slots.taskId = taskId;\n  if (menuIndex !== undefined && Number.isInteger(menuIndex) && menuIndex >= 1) slots.menuIndex = menuIndex;\n')
+
+          replace_once(
+              'src/agent/interpreter.ts',
+              '    if (/\\b(?:prep plan|preparation plan|plan my prep|plan the prep|prep schedule|preparation schedule)\\b/.test(lower)) return result("prep", 0.96);\n    if (/\\b(?:menu|meal ideas|food ideas|what should we eat|show.*meals)\\b/.test(lower)) return result("menu_options", 0.95);\n',
+              '''    if (/\\b(?:prep plan|preparation plan|plan my prep|plan the prep|prep schedule|preparation schedule)\\b/.test(lower)) return result("prep", 0.96);\n\n    if (context.hasEvent && context.hasMenuOptions && /\\b(?:choose|pick|select|use)\\b/.test(lower)) {\n      const numbered = lower.match(/\\b(?:option|menu)?\\s*(1|2|3)\\b/);\n      const wordIndex = /\\b(?:first|one)\\b/.test(lower) ? 1 : /\\b(?:second|two)\\b/.test(lower) ? 2 : /\\b(?:third|three)\\b/.test(lower) ? 3 : undefined;\n      const menuIndex = numbered ? Number(numbered[1]) : wordIndex;\n      return result("choose_menu", 0.97, menuIndex ? { menuIndex } : {});\n    }\n\n    if (/\\b(?:menu|meal ideas|food ideas|what should we eat|show.*meals)\\b/.test(lower)) return result("menu_options", 0.95);\n''',
+          )
+
+          replace_once('src/agent/orchestrator.ts', '      hasPendingConfirmation: Boolean(state.pending),\n', '      hasPendingConfirmation: Boolean(state.pending),\n      hasMenuOptions: Boolean(state.lastMenus?.length),\n')
+          replace_once('src/agent/orchestrator.ts', '      case "menu_options": return this.showMenus(state);\n', '      case "menu_options": return this.showMenus(state);\n      case "choose_menu": return this.chooseMenuFromText(state, text, intent.slots.menuIndex);\n')
+          replace_once(
+              'src/agent/orchestrator.ts',
+              '''    state.lastMenus = result.data.menus;\n    return reply({\n      status: "ok",\n      speech: `I found ${result.data.menus.length} menu options that fit the confirmed guest requirements.`,\n      eventId: state.eventId,\n      cards: [menuCard(result.data.menus)],\n      actions: result.data.menus.map((menu) => ({ type: "choose_menu", label: shorten(`Choose ${menu.name}`), menuId: menu.id })),\n    });\n  }\n\n  private async requestMenuCommit''',
+              '''    state.lastMenus = result.data.menus;\n    const spokenOptions = result.data.menus.map((menu, index) => `Option ${index + 1}: ${menu.name}.`).join(" ");\n    return reply({\n      status: "ok",\n      speech: `I found ${result.data.menus.length} menu options. ${spokenOptions} Say choose option one, two or three.`,\n      eventId: state.eventId,\n      cards: [menuCard(result.data.menus)],\n      actions: result.data.menus.map((menu) => ({ type: "choose_menu", label: shorten(`Choose ${menu.name}`), menuId: menu.id })),\n    });\n  }\n\n  private async chooseMenuFromText(state: ConversationState, text: string, menuIndex?: number): Promise<AgentReply> {\n    const menus = state.lastMenus ?? [];\n    if (!menus.length) return this.showMenus(state);\n    if (menuIndex !== undefined) {\n      const menu = menus[menuIndex - 1];\n      if (menu) return this.requestMenuCommit(state, menu.id);\n    }\n    const lower = text.toLowerCase();\n    const matched = menus.find((menu) => {\n      const words = menu.name.toLowerCase().split(/\\s+/).filter((word) => word.length > 4);\n      return words.some((word) => lower.includes(word));\n    });\n    if (matched) return this.requestMenuCommit(state, matched.id);\n    return reply({\n      status: "needs_input",\n      speech: `Which menu should I use? Say choose option ${menus.map((_, index) => index + 1).join(", ")}.`,\n      question: "Which menu should I use?",\n      eventId: state.eventId,\n      actions: menus.map((menu) => ({ type: "choose_menu", label: shorten(`Choose ${menu.name}`), menuId: menu.id })),\n    });\n  }\n\n  private async requestMenuCommit''',
+          )
+          replace_once(
+              'src/agent/orchestrator.ts',
+              '''  private async completeTaskFromText(state: ConversationState, text: string, explicitTaskId?: string): Promise<AgentReply> {\n    if (explicitTaskId) return this.completeTask(state, explicitTaskId);\n    const ready = state.lastTasks?.filter((task) => task.status === "ready") ?? [];\n    if (ready.length === 1) return this.completeTask(state, ready[0]!.id);\n    const lower = text.toLowerCase();\n    const matched = ready.find((task) => task.title.toLowerCase().split(/\\s+/).filter((word) => word.length > 4).some((word) => lower.includes(word)));\n    if (matched) return this.completeTask(state, matched.id);\n    return reply({ status: "needs_input", speech: "Which prep task did you finish?", question: "Which prep task did you finish?", eventId: state.eventId, actions: ready.slice(0, 4).map((task) => ({ type: "complete_task", label: shorten(task.title), taskId: task.id })) });\n  }\n''',
+              '''  private async completeTaskFromText(state: ConversationState, text: string, explicitTaskId?: string): Promise<AgentReply> {\n    if (explicitTaskId) return this.completeTask(state, explicitTaskId);\n    const lower = text.toLowerCase();\n    const status = await this.currentStatus(state);\n    if (!status) return this.noEvent();\n    if (!status.ok) return this.failure(status, state);\n\n    const authoritativeNext = status.data.nextAction;\n    if (authoritativeNext && /\\b(?:done|finished|complete)\\b/.test(lower)) {\n      return this.completeTask(state, authoritativeNext.id);\n    }\n\n    const ready = state.lastTasks?.filter((task) => task.status === "ready") ?? [];\n    const matched = ready.find((task) => task.title.toLowerCase().split(/\\s+/).filter((word) => word.length > 4).some((word) => lower.includes(word)));\n    if (matched) return this.completeTask(state, matched.id);\n    return reply({ status: "needs_input", speech: "Which prep task did you finish?", question: "Which prep task did you finish?", eventId: state.eventId, actions: ready.slice(0, 4).map((task) => ({ type: "complete_task", label: shorten(task.title), taskId: task.id })) });\n  }\n''',
+          )
+
+          # Browser UI state and handler integration.
+          replace_once(
+              'web/types.ts',
+              'export type ViewMode = "conversation" | "live" | "activity";\n\n',
+              '''export type ViewMode = "conversation" | "live" | "activity";\n\nexport type VoiceSessionStatus = "unavailable" | "idle" | "listening" | "processing" | "speaking" | "error";\n\nexport interface VoiceUiState {\n  supported: boolean;\n  active: boolean;\n  status: VoiceSessionStatus;\n  message: string;\n  lastHeard?: string;\n  lastSpoken?: string;\n}\n\n''',
+          )
+          replace_once('web/types.ts', '  busy: boolean;\n  expandedCard?: AgentCard;\n', '  busy: boolean;\n  voice: VoiceUiState;\n  expandedCard?: AgentCard;\n')
+
+          Path('web/voice.ts').write_text(r'''import type { VoiceUiState } from "./types.js";
+
+type RecognitionResultEvent = {
+  results: ArrayLike<ArrayLike<{ transcript: string }>>;
+};
+
+type RecognitionError = { error: string };
+
+interface RecognitionLike {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  maxAlternatives: number;
+  onresult: ((event: RecognitionResultEvent) => void) | null;
+  onerror: ((event: RecognitionError) => void) | null;
+  onend: (() => void) | null;
+  start(): void;
+  abort(): void;
+}
+
+type RecognitionConstructor = new () => RecognitionLike;
+
+type SpeechUtteranceLike = {
+  text: string;
+  lang: string;
+  rate: number;
+  onend: (() => void) | null;
+  onerror: (() => void) | null;
+};
+
+type SpeechUtteranceConstructor = new (text: string) => SpeechUtteranceLike;
+
+interface SpeechSynthesisLike {
+  cancel(): void;
+  speak(utterance: SpeechUtteranceLike): void;
+}
+
+export interface VoiceControllerCallbacks {
+  onTranscript(text: string): void;
+  onState(state: VoiceUiState): void;
+}
+
+export interface VoiceController {
+  snapshot(): VoiceUiState;
+  activate(): void;
+  deactivate(): void;
+  listen(): void;
+  speak(text: string): Promise<void>;
+  destroy(): void;
+}
+
+function browserRecognitionConstructor(): RecognitionConstructor | undefined {
+  const candidate = window as typeof window & {
+    SpeechRecognition?: RecognitionConstructor;
+    webkitSpeechRecognition?: RecognitionConstructor;
+  };
+  return candidate.SpeechRecognition ?? candidate.webkitSpeechRecognition;
+}
+
+function browserUtteranceConstructor(): SpeechUtteranceConstructor | undefined {
+  return (window as typeof window & { SpeechSynthesisUtterance?: SpeechUtteranceConstructor }).SpeechSynthesisUtterance;
+}
+
+function browserSynthesis(): SpeechSynthesisLike | undefined {
+  return (window as typeof window & { speechSynthesis?: SpeechSynthesisLike }).speechSynthesis;
+}
+
+function transcriptFrom(event: RecognitionResultEvent): string {
+  return event.results[0]?.[0]?.transcript?.trim() ?? "";
+}
+
+export function createBrowserVoiceController(callbacks: VoiceControllerCallbacks): VoiceController {
+  const Recognition = browserRecognitionConstructor();
+  const Utterance = browserUtteranceConstructor();
+  const synthesis = browserSynthesis();
+  const supported = Boolean(Recognition && Utterance && synthesis);
+  let current: VoiceUiState = {
+    supported,
+    active: false,
+    status: supported ? "idle" : "unavailable",
+    message: supported ? "Voice is ready." : "Voice input is unavailable in this browser. Touch and keyboard controls still work.",
+  };
+  let recognition: RecognitionLike | undefined;
+  let destroyed = false;
+
+  const publish = (patch: Partial<VoiceUiState>): void => {
+    current = { ...current, ...patch };
+    callbacks.onState({ ...current });
+  };
+
+  const clearRecognition = (): void => {
+    if (!recognition) return;
+    const existing = recognition;
+    recognition = undefined;
+    existing.onresult = null;
+    existing.onerror = null;
+    existing.onend = null;
+    try { existing.abort(); } catch { /* already ended */ }
+  };
+
+  const fail = (message: string): void => {
+    clearRecognition();
+    current.active = false;
+    publish({ status: "error", message, active: false });
+  };
+
+  const controller: VoiceController = {
+    snapshot: () => ({ ...current }),
+    activate: () => {
+      if (!supported || destroyed) {
+        publish({ active: false, status: "unavailable", message: "Voice input is unavailable in this browser. Touch and keyboard controls still work." });
+        return;
+      }
+      synthesis!.cancel();
+      current.active = true;
+      publish({ active: true, status: "idle", message: "Voice mode is on." });
+    },
+    deactivate: () => {
+      current.active = false;
+      clearRecognition();
+      synthesis?.cancel();
+      publish({ active: false, status: supported ? "idle" : "unavailable", message: supported ? "Voice mode is off." : current.message });
+    },
+    listen: () => {
+      if (!supported || !current.active || destroyed || recognition) return;
+      const instance = new Recognition!();
+      recognition = instance;
+      instance.lang = "en-GB";
+      instance.continuous = false;
+      instance.interimResults = false;
+      instance.maxAlternatives = 1;
+      instance.onresult = (event) => {
+        const heard = transcriptFrom(event);
+        recognition = undefined;
+        instance.onend = null;
+        if (!heard) {
+          publish({ status: "idle", message: "I didn't catch that." });
+          if (current.active) setTimeout(() => controller.listen(), 120);
+          return;
+        }
+        publish({ status: "processing", message: `Heard: ${heard}`, lastHeard: heard });
+        callbacks.onTranscript(heard);
+      };
+      instance.onerror = (event) => {
+        recognition = undefined;
+        instance.onend = null;
+        if (event.error === "no-speech") {
+          publish({ status: "idle", message: "I didn't hear anything. Listening again." });
+          if (current.active) setTimeout(() => controller.listen(), 180);
+          return;
+        }
+        if (event.error === "aborted") return;
+        if (event.error === "not-allowed" || event.error === "service-not-allowed") return fail("Microphone permission was denied. Voice mode is off.");
+        if (event.error === "audio-capture") return fail("No microphone is available. Voice mode is off.");
+        fail(`Voice recognition failed (${event.error}). Voice mode is off.`);
+      };
+      instance.onend = () => {
+        if (recognition === instance) recognition = undefined;
+        if (current.active && current.status === "listening") {
+          publish({ status: "idle", message: "Listening paused. Starting again." });
+          setTimeout(() => controller.listen(), 180);
+        }
+      };
+      publish({ status: "listening", message: "Listening…" });
+      try { instance.start(); }
+      catch { recognition = undefined; fail("Voice recognition could not start. Voice mode is off."); }
+    },
+    speak: async (text: string) => {
+      if (!supported || !current.active || destroyed || !text.trim()) return;
+      clearRecognition();
+      synthesis!.cancel();
+      await new Promise<void>((resolve) => {
+        const utterance = new Utterance!(text);
+        utterance.lang = "en-GB";
+        utterance.rate = 0.98;
+        utterance.onend = () => { publish({ status: "idle", message: "Ready for the next request.", lastSpoken: text }); resolve(); };
+        utterance.onerror = () => { fail("Speech output failed. Voice mode is off."); resolve(); };
+        publish({ status: "speaking", message: "Host is speaking…", lastSpoken: text });
+        synthesis!.speak(utterance);
+      });
+    },
+    destroy: () => { destroyed = true; current.active = false; clearRecognition(); synthesis?.cancel(); },
+  };
+  return controller;
+}
+''')
+
+          replace_once('web/main.ts', 'import { createBrowserHostRuntime } from "./runtime.js";\n', 'import { createBrowserHostRuntime } from "./runtime.js";\nimport { createBrowserVoiceController } from "./voice.js";\n')
+          replace_once(
+              'web/main.ts',
+              '  busy: false,\n};\n',
+              '''  busy: false,\n  voice: { supported: false, active: false, status: "unavailable", message: "Voice is loading." },\n};\n\nconst voice = createBrowserVoiceController({\n  onTranscript: (text) => { void submitVoice(text); },\n  onState: (next) => { state.voice = next; renderNow(); },\n});\nstate.voice = voice.snapshot();\n''',
+          )
+          replace_once(
+              'web/main.ts',
+              '''async function submit(text: string): Promise<void> {\n  await guarded(async () => {\n    state.mode = "conversation";\n    state.transcript.push({ id: nextTranscriptId(), role: "user", text });\n    renderNow();\n    const reply = await runtime.agent.handleText(conversationId, text);\n    applyReply(reply);\n  });\n}\n\n''',
+              '''async function submit(text: string): Promise<void> {\n  await guarded(async () => {\n    state.mode = "conversation";\n    state.transcript.push({ id: nextTranscriptId(), role: "user", text });\n    renderNow();\n    const reply = await runtime.agent.handleText(conversationId, text);\n    applyReply(reply);\n  });\n}\n\nasync function submitVoice(text: string): Promise<void> {\n  await guarded(async () => {\n    state.mode = "conversation";\n    state.transcript.push({ id: nextTranscriptId(), role: "user", text });\n    renderNow();\n    const reply = await runtime.agent.handleText(conversationId, text);\n    applyReply(reply);\n    await voice.speak(reply.speech);\n  });\n  if (voice.snapshot().active) voice.listen();\n}\n\nasync function startVoice(): Promise<void> {\n  if (state.busy || !state.voice.supported || state.voice.active) return;\n  voice.activate();\n  const intro = runtime.activeEventId()\n    ? "Voice mode on. Ask for status, what is next, shopping, prep, history, or tell me what changed."\n    : "Voice mode on. Tell me what you are hosting, when it is, how many people are coming and your budget.";\n  await voice.speak(intro);\n  if (voice.snapshot().active) voice.listen();\n}\n\nfunction stopVoice(): void { voice.deactivate(); }\n\n''',
+          )
+          replace_once('web/main.ts', '  toggleTheme,\n', '  toggleTheme,\n  startVoice,\n  stopVoice,\n')
+          replace_once('web/main.ts', 'void initialise();\n', 'window.addEventListener("beforeunload", () => voice.destroy());\n\nvoid initialise();\n')
+
+          replace_once('web/render.ts', '  toggleTheme(): void;\n', '  toggleTheme(): void;\n  startVoice(): Promise<void>;\n  stopVoice(): void;\n')
+          replace_once(
+              'web/render.ts',
+              '''  const theme = button("Theme", "icon-button");\n  theme.setAttribute("aria-label", "Switch light or dark theme");\n  theme.addEventListener("click", handlers.toggleTheme);\n  header.append(brand, nav, theme);\n  return header;\n}\n''',
+              '''  const controls = el("div", "header-actions");\n  const voiceLabel = !state.voice.supported\n    ? "Voice unavailable"\n    : state.voice.active\n      ? state.voice.status === "listening" ? "Listening…" : state.voice.status === "speaking" ? "Speaking…" : "Voice on"\n      : "Voice";\n  const voice = button(voiceLabel, state.voice.active ? "voice-button active" : "voice-button");\n  voice.disabled = state.busy || !state.voice.supported;\n  voice.setAttribute("aria-label", state.voice.active ? "Stop voice" : state.voice.supported ? "Start voice" : "Voice unavailable");\n  voice.setAttribute("aria-pressed", state.voice.active ? "true" : "false");\n  voice.dataset.voiceStatus = state.voice.status;\n  voice.addEventListener("click", () => { if (state.voice.active) handlers.stopVoice(); else void handlers.startVoice(); });\n  const voiceState = el("span", "voice-state", state.voice.message);\n  voiceState.setAttribute("aria-live", "polite");\n  voiceState.setAttribute("role", "status");\n\n  const theme = button("Theme", "icon-button");\n  theme.setAttribute("aria-label", "Switch light or dark theme");\n  theme.addEventListener("click", handlers.toggleTheme);\n  controls.append(voice, voiceState, theme);\n  header.append(brand, nav, controls);\n  return header;\n}\n''',
+          )
+
+          replace_once('web/styles.css', '.nav-button, .icon-button {\n', '.nav-button, .icon-button, .voice-button {\n')
+          replace_once('web/styles.css', '.nav-button:hover, .icon-button:hover { background: var(--bg-soft); }\n', '.nav-button:hover, .icon-button:hover, .voice-button:hover:not(:disabled) { background: var(--bg-soft); }\n')
+          replace_once(
+              'web/styles.css',
+              '.icon-button { justify-self: end; padding: 0 14px; border: 1px solid var(--line); }\n',
+              '''.icon-button { padding: 0 14px; border: 1px solid var(--line); }\n.header-actions { justify-self: end; min-width: 0; display: flex; align-items: center; gap: 8px; }\n.voice-button { min-height: var(--touch); padding: 0 15px; border: 1px solid var(--line); background: transparent; cursor: pointer; font-weight: 800; }\n.voice-button.active { background: var(--bg-strong); border-color: color-mix(in srgb, var(--ready) 40%, var(--line)); }\n.voice-button:disabled { opacity: 0.52; cursor: not-allowed; }\n.voice-state { max-width: 220px; color: var(--text-muted); font-size: 12px; line-height: 1.25; }\n''',
+          )
+          replace_once('web/styles.css', '  .icon-button { grid-column: 2; grid-row: 1; }\n', '  .header-actions { grid-column: 2; grid-row: 1; }\n  .voice-state { display: none; }\n')
+
+          # Agent verification additions.
+          replace_once(
+              'tests/agent-orchestrator.test.mjs',
+              'test("menu selection is confirmation-gated before committed state changes", async () => {\n',
+              '''test("spoken menu option choice uses the existing confirmation-gated commit path", async () => {\n  const { agent, persistence } = makeAgent();\n  await createEvent(agent, "voice-menu");\n  const menus = await agent.handleText("voice-menu", "menu ideas");\n  assert.match(menus.speech, /Option 1:/);\n  assert.match(menus.speech, /choose option one/i);\n  const confirmation = await agent.handleText("voice-menu", "choose option one");\n  assert.equal(confirmation.status, "needs_confirmation");\n  let loaded = await persistence.load("agent-dinner");\n  assert.equal(loaded?.state.event.selectedMenuId, undefined);\n  const confirmed = await agent.handleText("voice-menu", "yes");\n  assert.equal(confirmed.status, "ok");\n  loaded = await persistence.load("agent-dinner");\n  assert.ok(loaded?.state.event.selectedMenuId);\n});\n\ntest("menu selection is confirmation-gated before committed state changes", async () => {\n''',
+          )
+          replace_once(
+              'tests/agent-orchestrator.test.mjs',
+              'test("status response is derived from authoritative tool state and stays concise", async () => {\n',
+              '''test("spoken done completes the authoritative next preparation task", async () => {\n  const { agent, persistence } = makeAgent();\n  await setupCommitted(agent, "voice-done");\n  await agent.handleText("voice-done", "prep plan");\n  const next = await agent.handleText("voice-done", "what's next");\n  assert.match(next.speech, /Next:/);\n  const nextTaskId = next.actions.find((action) => action.type === "complete_task")?.taskId;\n  assert.ok(nextTaskId);\n  const completed = await agent.handleText("voice-done", "done");\n  assert.equal(completed.status, "ok");\n  const loaded = await persistence.load("agent-dinner");\n  assert.equal(loaded?.state.tasks[nextTaskId]?.status, "done");\n});\n\ntest("status response is derived from authoritative tool state and stays concise", async () => {\n''',
+          )
+
+          Path('tests/web/voice-ui.spec.ts').write_text(r'''import { expect, test, type Page } from "@playwright/test";
+
+const PRIMARY_REQUEST = "I'm hosting dinner for six people on Saturday at 7pm with a £120 budget, one vegetarian guest and a nut allergy, with limited same-day cooking";
+
+async function installVoiceFakes(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    type FakeUtterance = { text: string; lang: string; rate: number; onend: (() => void) | null; onerror: (() => void) | null };
+    class FakeSpeechRecognition {
+      lang = ""; continuous = false; interimResults = false; maxAlternatives = 1;
+      onresult: ((event: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null = null;
+      onerror: ((event: { error: string }) => void) | null = null;
+      onend: (() => void) | null = null;
+      start(): void { (window as any).__hostRecognition = this; }
+      abort(): void { if ((window as any).__hostRecognition === this) (window as any).__hostRecognition = undefined; }
+    }
+    class FakeSpeechSynthesisUtterance implements FakeUtterance {
+      lang = ""; rate = 1; onend: (() => void) | null = null; onerror: (() => void) | null = null;
+      constructor(public text: string) {}
+    }
+    (window as any).__hostSpoken = [] as string[];
+    (window as any).__hostRecognition = undefined;
+    (window as any).__emitHostVoice = (text: string) => {
+      const recognition = (window as any).__hostRecognition as FakeSpeechRecognition | undefined;
+      if (!recognition?.onresult) throw new Error("Host is not listening.");
+      (window as any).__hostRecognition = undefined;
+      recognition.onresult({ results: [[{ transcript: text }]] });
+    };
+    Object.defineProperty(window, "SpeechRecognition", { configurable: true, value: FakeSpeechRecognition });
+    Object.defineProperty(window, "webkitSpeechRecognition", { configurable: true, value: FakeSpeechRecognition });
+    Object.defineProperty(window, "SpeechSynthesisUtterance", { configurable: true, value: FakeSpeechSynthesisUtterance });
+    Object.defineProperty(window, "speechSynthesis", { configurable: true, value: {
+      cancel() {},
+      speak(utterance: FakeUtterance) {
+        (window as any).__hostSpoken.push(utterance.text);
+        queueMicrotask(() => utterance.onend?.());
+      },
+    }});
+  });
+}
+
+async function openVoiceClean(page: Page): Promise<void> {
+  await installVoiceFakes(page);
+  await page.goto("/");
+  await page.evaluate(() => window.localStorage.clear());
+  await page.reload();
+  await expect(page.getByRole("button", { name: "Start voice" })).toBeVisible();
+}
+
+async function startVoice(page: Page): Promise<void> {
+  await page.getByRole("button", { name: "Start voice" }).click();
+  await expect(page.getByRole("button", { name: "Stop voice" })).toBeVisible();
+  await expect(page.locator('[data-voice-status="listening"]')).toBeVisible();
+}
+
+async function spokenCount(page: Page): Promise<number> {
+  return page.evaluate(() => ((window as any).__hostSpoken as string[]).length);
+}
+async function lastSpoken(page: Page): Promise<string> {
+  return page.evaluate(() => ((window as any).__hostSpoken as string[]).at(-1) ?? "");
+}
+async function say(page: Page, text: string, expected: RegExp): Promise<void> {
+  await expect(page.locator('[data-voice-status="listening"]')).toBeVisible();
+  const before = await spokenCount(page);
+  await page.evaluate((spokenText) => (window as any).__emitHostVoice(spokenText), text);
+  await expect.poll(() => spokenCount(page)).toBeGreaterThan(before);
+  await expect.poll(() => lastSpoken(page)).toMatch(expected);
+  await expect(page.locator('[data-voice-status="listening"]')).toBeVisible();
+}
+
+test("voice-only core journey reaches authoritative execution and receipts after one activation", async ({ page }) => {
+  await openVoiceClean(page); await startVoice(page);
+  await say(page, PRIMARY_REQUEST, /Done\. I've set up/i);
+  await say(page, "menu ideas", /Option 1:.*Say choose option one, two or three/i);
+  await say(page, "choose option one", /Use .* as the committed menu\?/i);
+  await say(page, "yes", /Menu saved/i);
+  await say(page, "shopping list", /Shopping list ready/i);
+  await say(page, "find products", /Nothing has been purchased/i);
+  await say(page, "checkout", /simulated checkout/i);
+  await say(page, "yes", /Simulated checkout complete/i);
+  await say(page, "prep plan", /Prep plan ready/i);
+  await say(page, "what's next", /Next:/i);
+  await say(page, "done", /Done\./i);
+  await say(page, "did you actually", /Latest:/i);
+  await expect(page.locator(".message.user")).toHaveCount(12);
+  await expect(page.getByRole("button", { name: "Stop voice" })).toBeVisible();
+});
+
+test("spoken no cancels a pending material action without requiring touch confirmation", async ({ page }) => {
+  await openVoiceClean(page); await startVoice(page);
+  await say(page, PRIMARY_REQUEST, /Done\. I've set up/i);
+  await say(page, "menu ideas", /Option 1:/i);
+  await say(page, "choose option one", /committed menu\?/i);
+  await say(page, "no", /Cancelled\. I haven't changed the plan/i);
+  await say(page, "shopping list", /menu/i);
+});
+
+test("voice unavailability is explicit and leaves the complete touch path available", async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window, "SpeechRecognition", { configurable: true, value: undefined });
+    Object.defineProperty(window, "webkitSpeechRecognition", { configurable: true, value: undefined });
+    Object.defineProperty(window, "SpeechSynthesisUtterance", { configurable: true, value: undefined });
+  });
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: "Voice unavailable" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Plan a dinner" })).toBeVisible();
+  await expect(page.getByText(/Touch and keyboard controls still work/i)).toBeAttached();
+});
+''')
+
+          package = json.loads(Path('package.json').read_text())
+          package['version'] = '0.7.0'
+          package['description'] = 'Voice-and-touch simulated Alexa+ hosting execution experience backed by controlled authoritative state.'
+          package['scripts']['verify:stage07'] = 'npm test && npm run build:web && npm run test:web'
+          Path('package.json').write_text(json.dumps(package, indent=2) + '\n')
+          PY
+
+      - name: Resolve dependencies and browser runtime
+        run: |
+          npm install --ignore-scripts
+          npx playwright install --with-deps chromium
+
+      - name: Verify backend and web build
+        run: |
+          npm test
+          npm run build:web
+          npx playwright test --list
+
+      - name: Run browser acceptance and preserve output
+        id: browser
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p reports
+          npm run test:web 2>&1 | tee reports/STAGE07_BROWSER_LAST_RUN.txt
+
+      - name: Enforce Stage 07 boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! grep -RInE 'HostDomainEngine|validateHostState|\.\./src/domain|src/domain' web
+          ! grep -RInE 'TODO|FIXME|HACK' web tests/web
+
+      - name: Preserve isolated candidate and diagnostic
+        if: always() && steps.browser.outcome != 'skipped'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/agent/types.ts src/agent/model.ts src/agent/interpreter.ts src/agent/orchestrator.ts \
+            web/types.ts web/voice.ts web/main.ts web/render.ts web/styles.css \
+            tests/agent-orchestrator.test.mjs tests/web/voice-ui.spec.ts \
+            package.json package-lock.json reports/STAGE07_BROWSER_LAST_RUN.txt
+          if ! git diff --cached --quiet; then
+            git commit -m "Build Stage 07 voice interaction candidate"
+            git push origin HEAD:stage07-voice
+          fi
+
+      - name: Enforce browser acceptance gate
+        if: steps.browser.outcome == 'failure'
+        run: exit 1
