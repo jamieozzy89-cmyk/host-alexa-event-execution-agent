@@ -1,0 +1,30 @@
+name: Apply Stage 06 UI state-flow fix
+on:
+  push:
+    branches: [stage06-ui]
+    paths:
+      - '.stage06-ui-fix-trigger'
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: stage06-ui
+      - name: Apply exact UI fix
+        run: |
+          set -euo pipefail
+          git apply --check .stage06-ui-fix.patch
+          git apply .stage06-ui-fix.patch
+          npm install --ignore-scripts
+          npm run typecheck:web
+      - name: Commit corrected renderer
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add web/render.ts package-lock.json
+          git commit -m "Fix Stage 06 action and activity rendering"
+          git push origin HEAD:stage06-ui
