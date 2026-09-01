@@ -19,6 +19,8 @@ const state: HostUiState = {
   latest: {},
   mode: "conversation",
   busy: false,
+  storageMode: runtime.storageMode,
+  clearDataPending: false,
   voice: {
     supported: false,
     active: false,
@@ -76,6 +78,36 @@ function renderNow(): void {
   render(root, state, handlers);
 }
 
+function focusByKey(key: string): boolean {
+  const target = root.querySelector<HTMLElement>(`[data-focus-key="${CSS.escape(key)}"]`);
+  if (!target) return false;
+  target.focus();
+  return true;
+}
+
+function focusComposer(): void {
+  queueMicrotask(() => {
+    if (!focusByKey("composer")) root.querySelector<HTMLElement>("#main-content")?.focus();
+  });
+}
+
+function focusMainContext(): void {
+  queueMicrotask(() => {
+    if (focusByKey("mode-heading")) return;
+    if (state.mode === "conversation" && focusByKey("composer")) return;
+    root.querySelector<HTMLElement>("#main-content")?.focus();
+  });
+}
+
+function focusAfterAction(): void {
+  queueMicrotask(() => {
+    if (focusByKey("clear-data-cancel")) return;
+    const cancel = root.querySelector<HTMLButtonElement>(".confirmation-card .button.secondary");
+    if (cancel) { cancel.focus(); return; }
+    focusMainContext();
+  });
+}
+
 function setBusy(value: boolean): void {
   state.busy = value;
   renderNow();
@@ -108,6 +140,7 @@ async function submit(text: string): Promise<void> {
     const reply = await runtime.agent.handleText(conversationId, text);
     applyReply(reply);
   });
+  focusComposer();
 }
 
 async function submitVoice(text: string): Promise<void> {
@@ -151,6 +184,7 @@ async function performAction(action: AgentAction): Promise<void> {
       activity: state.mode === "activity",
     });
   });
+  focusAfterAction();
 }
 
 async function switchMode(mode: ViewMode): Promise<void> {
@@ -171,11 +205,20 @@ async function switchMode(mode: ViewMode): Promise<void> {
       applyReply(reply, { transcript: false, activity: true });
     }
   });
+  focusMainContext();
+}
+
+function readStoredTheme(): string | null {
+  try { return localStorage.getItem(THEME_KEY); } catch { return null; }
+}
+
+function saveStoredTheme(theme: "dark" | "light"): void {
+  try { localStorage.setItem(THEME_KEY, theme); } catch { /* Theme persistence is optional. */ }
 }
 
 function applyTheme(theme: "dark" | "light"): void {
   document.documentElement.dataset.theme = theme;
-  localStorage.setItem(THEME_KEY, theme);
+  saveStoredTheme(theme);
 }
 
 function toggleTheme(): void {
@@ -189,12 +232,37 @@ const handlers: UiHandlers = {
   toggleTheme,
   startVoice,
   stopVoice,
-  expand: (card) => { state.expandedCard = card; renderNow(); },
-  closeExpanded: () => { delete state.expandedCard; renderNow(); },
+  requestClearData: () => {
+    state.clearDataPending = true;
+    renderNow();
+    queueMicrotask(() => focusByKey("clear-data-cancel"));
+  },
+  cancelClearData: () => {
+    state.clearDataPending = false;
+    renderNow();
+    queueMicrotask(() => focusByKey("clear-host-data"));
+  },
+  confirmClearData: () => {
+    voice.deactivate();
+    runtime.clearHostEventData();
+    window.location.reload();
+  },
+  expand: (card) => {
+    state.expandedCard = card;
+    state.dialogReturnFocusKey = `expand:${card.type}`;
+    renderNow();
+  },
+  closeExpanded: () => {
+    const returnKey = state.dialogReturnFocusKey;
+    delete state.expandedCard;
+    delete state.dialogReturnFocusKey;
+    renderNow();
+    if (returnKey) queueMicrotask(() => focusByKey(returnKey));
+  },
 };
 
 async function initialise(): Promise<void> {
-  const storedTheme = localStorage.getItem(THEME_KEY);
+  const storedTheme = readStoredTheme();
   applyTheme(storedTheme === "light" ? "light" : "dark");
   renderNow();
 
@@ -203,10 +271,29 @@ async function initialise(): Promise<void> {
     setBusy(true);
     try {
       const resumed = await runtime.agent.resumeConversation(conversationId, activeEventId);
-      if (resumed.status === "error") runtime.forgetEvent();
-      applyReply(resumed);
+      if (resumed.status === "error") {
+        runtime.forgetEvent();
+        state.recoveryNotice = "Host couldn't safely restore the saved plan. The stored snapshot was left untouched so you can clear it deliberately from Data & privacy.";
+        state.transcript.push({
+          id: nextTranscriptId(),
+          role: "assistant",
+          text: state.recoveryNotice,
+        });
+        const welcome = await runtime.agent.handleText(conversationId, "help");
+        applyReply(welcome);
+      } else {
+        applyReply(resumed);
+      }
     } catch {
       runtime.forgetEvent();
+      state.recoveryNotice = "Host couldn't safely restore the saved plan. The stored snapshot was left untouched so you can clear it deliberately from Data & privacy.";
+      state.transcript.push({
+        id: nextTranscriptId(),
+        role: "assistant",
+        text: state.recoveryNotice,
+      });
+      const welcome = await runtime.agent.handleText(conversationId, "help");
+      applyReply(welcome);
     } finally {
       state.busy = false;
       renderNow();

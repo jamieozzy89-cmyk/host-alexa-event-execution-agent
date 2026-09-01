@@ -2,7 +2,7 @@
 
 **Competition:** Build, Ship, Shape: Amazon Developer Hackathon 2026  
 **Primary track:** Alexa+ — simulated Alexa+ web experience  
-**Current verified stage:** Stage 07 — voice + touch interaction  
+**Current verified stage:** Stage 09 — hardened voice + touch product; hosted deployment still pending
 **Competition deadline:** 23 October 2026, 20:00 GMT+1 (entrant-supplied competition page)
 
 ## What Host is
@@ -88,21 +88,18 @@ Implemented and verified capabilities include:
 
 ### Backend/application regression
 
-Stage 02–07 suite: **74 tests passed, 0 failed.**
+Stage 02–09 backend/application suite: **74 tests passed, 0 failed.**
 
 ### Browser acceptance
 
-Stage 06 + Stage 07 browser suite: **14 tests passed, 0 failed.**
+Stage 06–09 browser suite: **26 tests passed, 0 failed.**
 
 Configured Playwright projects:
 
 - `echo-show`: 1280 × 800, touch enabled;
 - `mobile`: 390 × 844, touch/mobile enabled.
 
-The 14 cases consist of:
-
-- eight retained Stage 06 touch cases;
-- six Stage 07 voice cases (three voice scenarios in each viewport).
+The 26 cases retain the Stage 06 touch and Stage 07 voice journeys and add Stage 09 accessibility, focus, recovery, privacy/storage and network-boundary checks across the Echo Show-like and mobile projects.
 
 Voice scenarios verify:
 
@@ -110,15 +107,13 @@ Voice scenarios verify:
 2. spoken cancellation of a pending material action and correct recovery guidance;
 3. explicit voice-unavailable fallback with touch path retained.
 
-Final successful Stage 07 GitHub Actions run: `33552445789`.
-
-See `reports/STAGE07_VERIFICATION.md` for the complete acceptance record and `docs/VOICE_INTERACTION_STAGE07.md` for the voice architecture.
+Stage 07 voice release evidence remains in `reports/STAGE07_VERIFICATION.md`. Stage 09 hardening evidence is recorded in `reports/STAGE09_VERIFICATION.md` and `docs/HARDENING_STAGE09.md`.
 
 ### Automated voice-test boundary
 
 Browser voice acceptance uses deterministic fake Web Speech recognition/synthesis objects injected into Chromium. This directly tests Host's browser voice-controller lifecycle, orchestration routing, confirmation behavior, spoken output, state effects and fallback behavior without depending on physical microphone acoustics or a remote speech service.
 
-Physical microphone/browser compatibility is therefore a later Stage 09 manual hardening check, not a claim made by the automated suite.
+Physical microphone/acoustic behavior across every real browser/device remains outside deterministic automation; the Stage 09 product therefore retains explicit voice-unavailable/error fallbacks rather than claiming universal browser voice compatibility.
 
 ## User experience contract
 
@@ -146,6 +141,30 @@ Interaction rules enforced by the application/tests include:
 - require confirmation for material or transaction-like actions;
 - preserve equivalent controlled routes across voice and touch where the current journey exposes them;
 - explicitly retain touch/keyboard fallback if browser voice fails or is unavailable.
+
+## Stage 09 hardening
+
+The current product has been hardened without creating a second execution path. Verified additions include:
+
+- keyboard focus continuity after async rerenders;
+- labelled modal dialog with initial and return focus;
+- focused scrollable conversation region;
+- one latest-message screen-reader status announcement rather than replaying the full transcript;
+- keyboard-reachable voice-unavailable state;
+- Data & privacy explanation for browser storage and browser/platform speech recognition;
+- confirmed, scoped deletion of Host event data without clearing unrelated preferences;
+- explicit in-memory mode when persistent browser storage is blocked;
+- safe recovery when persisted event snapshots cannot be restored;
+- no-referrer document policy;
+- automated Axe WCAG A/AA checks on representative surfaces;
+- automated rejection of unsafe HTML-injection primitives and direct web/domain access;
+- zero production dependency vulnerabilities at the verified gate;
+- provider-independent relative static asset paths;
+- aligned package/lock version `0.9.0` and Node.js floor `>=22.12.0`.
+
+The full Stage 09 browser suite passes **26/26** and the backend/application suite remains **74/74**.
+
+Hosted deployment is not yet claimed. The Vercel chat deployment wrapper cannot currently accept the required target/name/file arguments through its exposed schema, and GitHub Pages is disabled and cannot be enabled with the repository workflow's normal `GITHUB_TOKEN`. The build is deployment-ready, but a public URL must not be listed until a supported deployment path is available and smoke-tested.
 
 ## Competition mini-challenge status
 
@@ -176,7 +195,7 @@ Voice uses browser Web Speech capability where available. It is not represented 
 
 Requirements:
 
-- Node.js 22+
+- Node.js 22.12+
 - npm
 
 Install dependencies and verify the authoritative/application layers:
@@ -205,10 +224,10 @@ npx playwright install --with-deps chromium
 npm run test:web
 ```
 
-Run the complete Stage 07 gate after browser dependencies are installed:
+Run the complete Stage 09 gate after browser dependencies are installed:
 
 ```bash
-npm run verify:stage07
+npm run verify:stage09
 ```
 
 ## Application-facing API
@@ -250,6 +269,10 @@ All authoritative mutations continue through the existing 17 tools:
 
 ## Current boundary
 
-The project now has the authoritative execution engine, persistence, validated tools, controlled agent/orchestrator, verified touch-first simulated Alexa+ interface, and a verified browser voice-only route for the core journey.
+Host now has the authoritative execution engine, persistence, validated tools, controlled agent/orchestrator, polished simulated Alexa+ touch UI, browser voice path, and the verified Stage 09 accessibility/privacy/recovery/security hardening layer.
 
-The next controlled stage is **Stage 08 — competition integration decision**. The next decision is whether an AWS Builder mini-challenge integration adds genuine product/judging value without weakening or complicating the primary Alexa+ experience. AWS is not required for the primary simulated Alexa+ route and must not be added merely to claim another technology.
+The remaining Stage 09 item is **hosted deployment and smoke testing**. The current code/build is ready for deployment, but no hosted URL is claimed while the connected deployment interfaces cannot accept the exact verified artifact or enable repository Pages.
+
+AWS Builder remains deliberately deferred. Open Source remains selected.
+
+After a real hosted deployment is verified—or if the submission is explicitly completed using the repository/demo access route allowed by the rules—the next controlled stage is **Stage 10 — submission artifacts**.

@@ -74,7 +74,7 @@ test("late vegan guest is previewed before the confirmed plan update", async ({ 
   await expect(page.getByText("Completed work kept")).toBeVisible();
   await expect(page.getByText("Your confirmation is required")).toBeVisible();
   await page.getByRole("button", { name: "Confirm" }).click();
-  await expect(page.getByText(/Updated\. I kept unaffected work/)).toBeVisible();
+  await expect(page.getByLabel("Host conversation").getByText(/Updated\. I kept unaffected work/)).toBeVisible();
   const summary = page.locator(".summary-grid");
   await expect(summary).toContainText("Guests");
   await expect(summary).toContainText("7");
@@ -88,7 +88,7 @@ test("reload resumes authoritative event state and drops stale confirmation UI",
   await expect(page.getByText("Your confirmation is required")).toBeVisible();
 
   await page.reload();
-  await expect(page.getByText(/Welcome back\. Dinner at home is restored/)).toBeVisible();
+  await expect(page.getByLabel("Host conversation").getByText(/Welcome back\. Dinner at home is restored/)).toBeVisible();
   await expect(page.getByText("Your confirmation is required")).toHaveCount(0);
   await expect(page.locator(".surface-card").filter({ hasText: "Current plan" })).toContainText("6");
 

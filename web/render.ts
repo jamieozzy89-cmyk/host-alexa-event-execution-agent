@@ -8,6 +8,9 @@ export interface UiHandlers {
   toggleTheme(): void;
   startVoice(): Promise<void>;
   stopVoice(): void;
+  requestClearData(): void;
+  cancelClearData(): void;
+  confirmClearData(): void;
   expand(card: AgentCard): void;
   closeExpanded(): void;
 }
@@ -139,6 +142,7 @@ function renderShopping(card: Extract<AgentCard, { type: "shopping_list" }>, han
   wrap.append(list);
   if (card.items.length > 5) {
     const more = button(`View all ${card.items.length} items`, "button secondary full-width");
+    more.dataset.focusKey = `expand:${card.type}`;
     more.addEventListener("click", () => handlers.expand(card));
     wrap.append(more);
   }
@@ -293,7 +297,7 @@ function renderCard(card: AgentCard, reply: AgentReply | undefined, handlers: Ui
 function renderTranscript(state: HostUiState): HTMLElement {
   const log = el("section", "transcript");
   log.setAttribute("aria-label", "Host conversation");
-  log.setAttribute("aria-live", "polite");
+  log.tabIndex = 0;
   for (const entry of state.transcript) {
     const bubble = el("div", `message ${entry.role}`);
     bubble.append(el("span", "message-role", entry.role === "assistant" ? "Host" : "You"));
@@ -356,6 +360,7 @@ function renderComposer(state: HostUiState, handlers: UiHandlers): HTMLElement {
   input.autocomplete = "off";
   input.disabled = state.busy;
   input.setAttribute("aria-label", "Message Host");
+  input.dataset.focusKey = "composer";
   const send = button(state.busy ? "Working…" : "Send", "button primary composer-send");
   send.disabled = state.busy;
   send.type = "submit";
@@ -384,7 +389,10 @@ function renderLive(state: HostUiState, handlers: UiHandlers): HTMLElement {
   const reply = state.liveReply ?? latestReply(state);
   const prep = reply?.cards.find((card): card is Extract<AgentCard, { type: "prep_timeline" }> => card.type === "prep_timeline");
   const head = el("div", "mode-heading");
-  head.append(el("p", "eyebrow", "Hands-busy view"), el("h1", "mode-title", "Live Mode"), el("p", "mode-copy", "One current action, large controls, no extra clutter."));
+  const title = el("h1", "mode-title focus-target", "Live Mode");
+  title.tabIndex = -1;
+  title.dataset.focusKey = "mode-heading";
+  head.append(el("p", "eyebrow", "Hands-busy view"), title, el("p", "mode-copy", "One current action, large controls, no extra clutter."));
   view.append(head);
   if (reply?.speech) view.append(el("p", "live-status", reply.speech));
   if (prep) view.append(renderPrep(prep, reply, handlers, state, true));
@@ -398,26 +406,73 @@ function renderLive(state: HostUiState, handlers: UiHandlers): HTMLElement {
   return view;
 }
 
+function renderPrivacy(state: HostUiState, handlers: UiHandlers): HTMLElement {
+  const wrap = cardShell("Data & privacy", "Current demo behavior");
+  wrap.classList.add("privacy-card");
+  wrap.append(el("p", "privacy-copy", "Host stores event details in this browser only. This current build does not send plan data to a Host application server."));
+  wrap.append(el("p", "privacy-copy", "Voice recognition is provided by the browser or platform and may send audio to its speech service. Host does not store audio recordings."));
+  if (state.storageMode === "memory") {
+    wrap.append(el("p", "privacy-warning", "Persistent browser storage is unavailable, so this plan is saved only until this page closes."));
+  } else {
+    wrap.append(el("p", "privacy-copy", "Saved event data stays in local browser storage until it is cleared here or browser site data is removed."));
+  }
+  if (state.recoveryNotice) {
+    const notice = el("p", "privacy-warning", state.recoveryNotice);
+    notice.setAttribute("role", "alert");
+    wrap.append(notice);
+  }
+  const actions = el("div", "privacy-actions");
+  if (state.clearDataPending) {
+    const warning = el("div", "data-delete-confirmation");
+    warning.append(el("p", "confirmation-body", "Delete the saved Host event data from this browser? This cannot be undone."));
+    const cancel = button("Cancel data deletion", "button secondary");
+    cancel.dataset.focusKey = "clear-data-cancel";
+    cancel.addEventListener("click", handlers.cancelClearData);
+    const confirm = button("Delete saved Host data", "button danger-button");
+    confirm.addEventListener("click", handlers.confirmClearData);
+    const row = el("div", "confirmation-actions");
+    row.append(cancel, confirm);
+    warning.append(row);
+    actions.append(warning);
+  } else {
+    const clear = button("Clear saved Host data", "button secondary");
+    clear.dataset.focusKey = "clear-host-data";
+    clear.addEventListener("click", handlers.requestClearData);
+    actions.append(clear);
+  }
+  wrap.append(actions);
+  return wrap;
+}
+
 function renderActivity(state: HostUiState, handlers: UiHandlers): HTMLElement {
   const view = el("section", "mode-view activity-view");
   const reply = latestReply(state);
   const history = reply?.cards.find((card): card is Extract<AgentCard, { type: "history" }> => card.type === "history") ?? state.latest.history;
   const head = el("div", "mode-heading");
-  head.append(el("p", "eyebrow", "Verifiable state"), el("h1", "mode-title", "Activity"), el("p", "mode-copy", "Receipts show what Host actually completed, failed or reversed."));
+  const title = el("h1", "mode-title focus-target", "Activity");
+  title.tabIndex = -1;
+  title.dataset.focusKey = "mode-heading";
+  head.append(el("p", "eyebrow", "Verifiable state"), title, el("p", "mode-copy", "Receipts show what Host actually completed, failed or reversed."));
   view.append(head);
   if (history) view.append(renderHistory(history));
   else view.append(el("p", "empty-state", "No action history is available yet."));
   const actions = renderActionStrip(reply, handlers, state);
   if (actions) view.append(actions);
+  view.append(renderPrivacy(state, handlers));
   return view;
 }
 
 function renderDialog(card: AgentCard, handlers: UiHandlers): HTMLDialogElement {
   const dialog = el("dialog", "detail-dialog") as HTMLDialogElement;
   const head = el("div", "dialog-head");
+  const title = el("h2", "dialog-title", card.type === "shopping_list" ? "Full shopping list" : "Details");
+  title.id = `host-dialog-title-${card.type}`;
   const close = button("Close", "button secondary compact");
+  close.dataset.focusKey = "dialog-close";
   close.addEventListener("click", () => handlers.closeExpanded());
-  head.append(el("h2", "dialog-title", card.type === "shopping_list" ? "Full shopping list" : "Details"), close);
+  dialog.setAttribute("aria-labelledby", title.id);
+  dialog.setAttribute("aria-modal", "true");
+  head.append(title, close);
   dialog.append(head);
   if (card.type === "shopping_list") {
     const list = el("div", "dialog-list");
@@ -454,15 +509,19 @@ function renderHeader(state: HostUiState, handlers: UiHandlers): HTMLElement {
       ? state.voice.status === "listening" ? "Listening…" : state.voice.status === "speaking" ? "Speaking…" : "Voice on"
       : "Voice";
   const voice = button(voiceLabel, state.voice.active ? "voice-button active" : "voice-button");
-  voice.disabled = state.busy || !state.voice.supported;
+  voice.disabled = state.busy;
   voice.setAttribute("aria-label", state.voice.active ? "Stop voice" : state.voice.supported ? "Start voice" : "Voice unavailable");
   voice.setAttribute("aria-pressed", state.voice.active ? "true" : "false");
+  voice.setAttribute("aria-disabled", state.voice.supported ? "false" : "true");
+  voice.setAttribute("aria-describedby", "host-voice-state");
   voice.dataset.voiceStatus = state.voice.status;
   voice.addEventListener("click", () => {
+    if (!state.voice.supported) return;
     if (state.voice.active) handlers.stopVoice();
     else void handlers.startVoice();
   });
   const voiceState = el("span", "voice-state", state.voice.message);
+  voiceState.id = "host-voice-state";
   voiceState.setAttribute("aria-live", "polite");
   voiceState.setAttribute("role", "status");
 
@@ -481,16 +540,26 @@ export function render(root: HTMLElement, state: HostUiState, handlers: UiHandle
   const main = el("main", "main-content");
   main.id = "main-content";
   main.tabIndex = -1;
+  main.setAttribute("aria-busy", state.busy ? "true" : "false");
   if (state.mode === "conversation") main.append(renderPlan(state, handlers));
   if (state.mode === "live") main.append(renderLive(state, handlers));
   if (state.mode === "activity") main.append(renderActivity(state, handlers));
   shell.append(main);
+  const latestAssistant = [...state.transcript].reverse().find((entry) => entry.role === "assistant")?.text ?? state.voice.message;
+  const announcement = el("div", "sr-only", latestAssistant);
+  announcement.setAttribute("role", "status");
+  announcement.setAttribute("aria-live", "polite");
+  announcement.setAttribute("aria-atomic", "true");
+  shell.append(announcement);
   root.append(shell);
 
   if (state.expandedCard) {
     const dialog = renderDialog(state.expandedCard, handlers);
     root.append(dialog);
-    queueMicrotask(() => dialog.showModal());
+    queueMicrotask(() => {
+      dialog.showModal();
+      dialog.querySelector<HTMLButtonElement>("[data-focus-key=dialog-close]")?.focus();
+    });
   }
 
   if (state.mode === "conversation") {
