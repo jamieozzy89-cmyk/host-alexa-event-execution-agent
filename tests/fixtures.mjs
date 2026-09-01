@@ -42,8 +42,22 @@ export const baseMenu = {
         { itemId: "onion", name: "Onion", quantity: 2, unit: "each" },
       ],
       taskTemplates: [
-        { id: "make-sauce", title: "Make tomato sauce", category: "cook", durationMinutes: 25, dependencies: [], dueOffsetMinutes: 45 },
-        { id: "boil-pasta", title: "Boil pasta", category: "cook", durationMinutes: 15, dependencies: ["make-sauce"], dueOffsetMinutes: 20 },
+        {
+          id: "make-sauce",
+          title: "Make tomato sauce",
+          category: "cook",
+          durationMinutes: 25,
+          dependencies: [],
+          dueOffsetMinutes: 45,
+        },
+        {
+          id: "boil-pasta",
+          title: "Boil pasta",
+          category: "cook",
+          durationMinutes: 15,
+          dependencies: ["make-sauce"],
+          dueOffsetMinutes: 20,
+        },
       ],
     },
     {
@@ -58,7 +72,14 @@ export const baseMenu = {
         { itemId: "tomatoes", name: "Tomatoes", quantity: 300, unit: "g" },
       ],
       taskTemplates: [
-        { id: "prep-salad", title: "Prepare salad", category: "prep", durationMinutes: 10, dependencies: [], dueOffsetMinutes: 15 },
+        {
+          id: "prep-salad",
+          title: "Prepare salad",
+          category: "prep",
+          durationMinutes: 10,
+          dependencies: [],
+          dueOffsetMinutes: 15,
+        },
       ],
     },
   ],
@@ -89,7 +110,14 @@ export const veganAdjustedMenu = {
         { itemId: "oat-yogurt", name: "Oat yogurt", quantity: 500, unit: "g" },
       ],
       taskTemplates: [
-        { id: "prep-vegan-dessert", title: "Prepare vegan dessert", category: "prep", durationMinutes: 15, dependencies: [], dueOffsetMinutes: 60 },
+        {
+          id: "prep-vegan-dessert",
+          title: "Prepare vegan dessert",
+          category: "prep",
+          durationMinutes: 15,
+          dependencies: [],
+          dueOffsetMinutes: 60,
+        },
       ],
     },
   ],
