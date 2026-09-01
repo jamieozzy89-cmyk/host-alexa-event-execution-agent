@@ -1,3 +1,3 @@
-# Stage 09 branch frozen
+# Stage 09 development branch
 
-No further development-branch edits should be made. Use the verified clean release candidate for publication.
+Frozen. The verified release candidate is the publication source; this branch is not the release source.
