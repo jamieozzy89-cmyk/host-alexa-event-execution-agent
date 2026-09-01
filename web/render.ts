@@ -45,6 +45,7 @@ function money(value: number, currency: string): string {
 
 function latestReply(state: HostUiState): AgentReply | undefined {
   if (state.mode === "live" && state.liveReply) return state.liveReply;
+  if (state.mode === "activity" && state.activityReply) return state.activityReply;
   for (let index = state.transcript.length - 1; index >= 0; index -= 1) {
     const reply = state.transcript[index]?.reply;
     if (reply) return reply;
@@ -324,11 +325,16 @@ function planWorkspace(state: HostUiState, handlers: UiHandlers): HTMLElement {
   panel.setAttribute("aria-label", "Current Host result");
   const reply = latestReply(state);
   if (!reply?.cards.length) {
-    const welcome = el("article", "welcome-card");
-    welcome.append(el("p", "eyebrow", "Alexa+ simulation"));
-    welcome.append(el("h1", "welcome-title", "Turn hosting into a plan you can actually finish."));
-    welcome.append(el("p", "welcome-copy", "Tell Host what you're planning. It will keep the menu, shopping, preparation and late changes tied to real execution state—not just conversation."));
-    panel.append(welcome);
+    if (state.latest.event) panel.append(renderEvent(state.latest.event));
+    else {
+      const welcome = el("article", "welcome-card");
+      welcome.append(el("p", "eyebrow", "Alexa+ simulation"));
+      welcome.append(el("h1", "welcome-title", "Turn hosting into a plan you can actually finish."));
+      welcome.append(el("p", "welcome-copy", "Tell Host what you're planning. It will keep the menu, shopping, preparation and late changes tied to real execution state—not just conversation."));
+      panel.append(welcome);
+    }
+    const actions = renderActionStrip(reply, handlers, state);
+    if (actions) panel.append(actions);
     return panel;
   }
   const stack = el("div", "card-stack");
