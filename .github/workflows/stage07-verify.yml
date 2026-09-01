@@ -1,0 +1,58 @@
+name: Stage 07 voice verification
+on:
+  push:
+    branches: [stage07-voice]
+    paths:
+      - '.stage07-verify-trigger'
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: stage07-voice
+      - name: Apply exact Stage 07 source changes
+        run: python .stage07-apply.py
+      - name: Resolve dependencies
+        run: npm install --ignore-scripts
+      - name: Install Chromium with required system libraries
+        run: npx playwright install --with-deps chromium
+      - name: Verify backend and web build
+        run: |
+          npm test
+          npm run build:web
+          npx playwright test --list
+      - name: Run browser acceptance and preserve output
+        id: browser
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p reports
+          npm run test:web 2>&1 | tee reports/STAGE07_BROWSER_LAST_RUN.txt
+      - name: Enforce Stage 07 boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! grep -RInE 'HostDomainEngine|validateHostState|\.\./src/domain|src/domain' web
+          ! grep -RInE 'TODO|FIXME|HACK' web tests/web
+      - name: Preserve isolated candidate and diagnostic
+        if: always() && steps.browser.outcome != 'skipped'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/agent/types.ts src/agent/model.ts src/agent/interpreter.ts src/agent/orchestrator.ts \
+            web/types.ts web/voice.ts web/main.ts web/render.ts web/styles.css \
+            tests/agent-orchestrator.test.mjs tests/web/voice-ui.spec.ts \
+            package.json package-lock.json reports/STAGE07_BROWSER_LAST_RUN.txt
+          if ! git diff --cached --quiet; then
+            git commit -m "Build Stage 07 voice interaction candidate"
+            git push origin HEAD:stage07-voice
+          fi
+      - name: Enforce browser acceptance gate
+        if: steps.browser.outcome == 'failure'
+        run: exit 1
