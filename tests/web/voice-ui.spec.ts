@@ -133,7 +133,10 @@ test("voice unavailability is explicit and leaves the complete touch path availa
     Object.defineProperty(window, "SpeechSynthesisUtterance", { configurable: true, value: undefined });
   });
   await page.goto("/");
-  await expect(page.getByRole("button", { name: "Voice unavailable" })).toBeDisabled();
+  const unavailable = page.getByRole("button", { name: "Voice unavailable" });
+  await expect(unavailable).toHaveAttribute("aria-disabled", "true");
+  await unavailable.focus();
+  await expect(unavailable).toBeFocused();
   await expect(page.getByRole("button", { name: "Plan a dinner" })).toBeVisible();
   await expect(page.getByText(/Touch and keyboard controls still work/i)).toBeAttached();
 });
