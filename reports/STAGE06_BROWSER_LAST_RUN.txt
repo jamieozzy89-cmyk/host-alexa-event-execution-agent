@@ -1,0 +1,173 @@
+
+> host-alexa-event-execution-agent@0.6.0 test:web
+> playwright test
+
+
+Running 8 tests using 2 workers
+
+[1/8] [echo-show] › tests/web/host-ui.spec.ts:38:1 › complete core journey works through visible touch/action routes
+[2/8] [mobile] › tests/web/host-ui.spec.ts:38:1 › complete core journey works through visible touch/action routes
+  1) [mobile] › tests/web/host-ui.spec.ts:38:1 › complete core journey works through visible touch/action routes 
+
+    Error: expect(locator).toBeAttached() failed
+
+    Locator: getByText(/Next:/)
+    Expected: attached
+    Timeout: 8000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeAttached" with timeout 8000ms
+      - waiting for getByText(/Next:/)
+
+
+      55 |   await expect(page.getByRole("button", { name: "Mark complete" })).toBeVisible();
+      56 |   await page.getByRole("button", { name: "Mark complete" }).click();
+    > 57 |   await expect(page.getByText(/Next:/)).toBeAttached();
+         |                                         ^
+      58 |
+      59 |   await page.getByRole("button", { name: "Activity" }).click();
+      60 |   await expect(page.getByRole("heading", { name: "Activity" })).toBeVisible();
+        at /home/runner/work/host-alexa-event-execution-agent/host-alexa-event-execution-agent/tests/web/host-ui.spec.ts:57:41
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/host-ui-complete-core-jour-79b05-visible-touch-action-routes-mobile/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/host-ui-complete-core-jour-79b05-visible-touch-action-routes-mobile/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/host-ui-complete-core-jour-79b05-visible-touch-action-routes-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/host-ui-complete-core-jour-79b05-visible-touch-action-routes-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  2) [echo-show] › tests/web/host-ui.spec.ts:38:1 › complete core journey works through visible touch/action routes 
+
+    Error: expect(locator).toBeAttached() failed
+
+    Locator: getByText(/Next:/)
+    Expected: attached
+    Timeout: 8000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeAttached" with timeout 8000ms
+      - waiting for getByText(/Next:/)
+
+
+      55 |   await expect(page.getByRole("button", { name: "Mark complete" })).toBeVisible();
+      56 |   await page.getByRole("button", { name: "Mark complete" }).click();
+    > 57 |   await expect(page.getByText(/Next:/)).toBeAttached();
+         |                                         ^
+      58 |
+      59 |   await page.getByRole("button", { name: "Activity" }).click();
+      60 |   await expect(page.getByRole("heading", { name: "Activity" })).toBeVisible();
+        at /home/runner/work/host-alexa-event-execution-agent/host-alexa-event-execution-agent/tests/web/host-ui.spec.ts:57:41
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/host-ui-complete-core-jour-79b05-visible-touch-action-routes-echo-show/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/host-ui-complete-core-jour-79b05-visible-touch-action-routes-echo-show/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/host-ui-complete-core-jour-79b05-visible-touch-action-routes-echo-show/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/host-ui-complete-core-jour-79b05-visible-touch-action-routes-echo-show/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[3/8] [mobile] › tests/web/host-ui.spec.ts:65:1 › late vegan guest is previewed before the confirmed plan update
+[4/8] [echo-show] › tests/web/host-ui.spec.ts:65:1 › late vegan guest is previewed before the confirmed plan update
+[5/8] [mobile] › tests/web/host-ui.spec.ts:82:1 › reload resumes authoritative event state and drops stale confirmation UI
+[6/8] [echo-show] › tests/web/host-ui.spec.ts:82:1 › reload resumes authoritative event state and drops stale confirmation UI
+  3) [mobile] › tests/web/host-ui.spec.ts:82:1 › reload resumes authoritative event state and drops stale confirmation UI 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText(/Welcome back\. Dinner at home is restored/)
+    Expected: visible
+    Timeout: 8000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 8000ms
+      - waiting for getByText(/Welcome back\. Dinner at home is restored/)
+
+
+      88 |
+      89 |   await page.reload();
+    > 90 |   await expect(page.getByText(/Welcome back\. Dinner at home is restored/)).toBeVisible();
+         |                                                                             ^
+      91 |   await expect(page.getByText("Your confirmation is required")).toHaveCount(0);
+      92 |   await expect(page.locator(".surface-card").filter({ hasText: "Current plan" })).toContainText("6");
+      93 |
+        at /home/runner/work/host-alexa-event-execution-agent/host-alexa-event-execution-agent/tests/web/host-ui.spec.ts:90:77
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/host-ui-reload-resumes-aut-3066e-drops-stale-confirmation-UI-mobile/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/host-ui-reload-resumes-aut-3066e-drops-stale-confirmation-UI-mobile/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/host-ui-reload-resumes-aut-3066e-drops-stale-confirmation-UI-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/host-ui-reload-resumes-aut-3066e-drops-stale-confirmation-UI-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  4) [echo-show] › tests/web/host-ui.spec.ts:82:1 › reload resumes authoritative event state and drops stale confirmation UI 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText(/Welcome back\. Dinner at home is restored/)
+    Expected: visible
+    Timeout: 8000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 8000ms
+      - waiting for getByText(/Welcome back\. Dinner at home is restored/)
+
+
+      88 |
+      89 |   await page.reload();
+    > 90 |   await expect(page.getByText(/Welcome back\. Dinner at home is restored/)).toBeVisible();
+         |                                                                             ^
+      91 |   await expect(page.getByText("Your confirmation is required")).toHaveCount(0);
+      92 |   await expect(page.locator(".surface-card").filter({ hasText: "Current plan" })).toContainText("6");
+      93 |
+        at /home/runner/work/host-alexa-event-execution-agent/host-alexa-event-execution-agent/tests/web/host-ui.spec.ts:90:77
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/host-ui-reload-resumes-aut-3066e-drops-stale-confirmation-UI-echo-show/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/host-ui-reload-resumes-aut-3066e-drops-stale-confirmation-UI-echo-show/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/host-ui-reload-resumes-aut-3066e-drops-stale-confirmation-UI-echo-show/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/host-ui-reload-resumes-aut-3066e-drops-stale-confirmation-UI-echo-show/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[7/8] [mobile] › tests/web/host-ui.spec.ts:98:1 › interactive controls meet touch target floor and the page avoids document overflow
+[8/8] [echo-show] › tests/web/host-ui.spec.ts:98:1 › interactive controls meet touch target floor and the page avoids document overflow
+  4 failed
+    [echo-show] › tests/web/host-ui.spec.ts:38:1 › complete core journey works through visible touch/action routes 
+    [echo-show] › tests/web/host-ui.spec.ts:82:1 › reload resumes authoritative event state and drops stale confirmation UI 
+    [mobile] › tests/web/host-ui.spec.ts:38:1 › complete core journey works through visible touch/action routes 
+    [mobile] › tests/web/host-ui.spec.ts:82:1 › reload resumes authoritative event state and drops stale confirmation UI 
+  4 passed (24.2s)
