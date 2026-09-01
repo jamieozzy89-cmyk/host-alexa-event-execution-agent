@@ -1,0 +1,35 @@
+name: Stage 09 documentation update
+on:
+  push:
+    branches: [stage09-hardening]
+    paths:
+      - '.stage09-docs-trigger'
+permissions:
+  contents: write
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: stage09-hardening
+      - name: Apply Stage 09 handover and README update
+        run: python .stage09-docs.py
+      - name: Enforce documentation-only boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          changed="$(git diff --name-only | sort)"
+          printf '%s\n' "$changed"
+          test "$(printf '%s\n' "$changed" | grep -Ec '^(HANDOVER\.md|README\.md|reports/STAGE09_VERIFICATION\.md)$')" -eq 3
+          test -z "$(printf '%s\n' "$changed" | grep -Ev '^(HANDOVER\.md|README\.md|reports/STAGE09_VERIFICATION\.md)$' || true)"
+      - name: Commit permanent Stage 09 documentation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md HANDOVER.md reports/STAGE09_VERIFICATION.md
+          git commit -m "Record verified Stage 09 hardening state"
+          git push origin HEAD:stage09-hardening
