@@ -183,6 +183,8 @@ That exact release candidate passed:
 - injection/direct-domain boundary scans;
 - clean-tree checks confirming Stage 09 development workflows/scripts were absent from the candidate.
 
+The permanent verification report was then updated with this clean-candidate evidence. The final publication tree contains the same tested product/test blobs plus this report update.
+
 ## Dependency/licence observations
 
 The browser application has no third-party runtime dependency declared in `dependencies`.
@@ -222,7 +224,7 @@ The Stage 09 build is path-portable and reproducible, but a public hosted URL mu
 
 ## Completion boundary
 
-Stage 09 hardening functionality and its clean release candidate are verified.
+Stage 09 hardening functionality and clean product/test release blobs are verified.
 
 Stage 09 as a whole retains one unresolved external item until a hosted deployment can be created and smoke-tested: **deployment**.
 
