@@ -19,9 +19,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          changed="$(git diff --name-only)"
+          changed="$(git diff --name-only | sort)"
           printf '%s\n' "$changed"
-          test "$changed" = $'HANDOVER.md\nREADME.md' || test "$changed" = $'README.md\nHANDOVER.md'
+          test "$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l)" -eq 2
+          test "$(printf '%s\n' "$changed" | grep -Ec '^(HANDOVER\.md|README\.md)$')" -eq 2
+          test -z "$(printf '%s\n' "$changed" | grep -Ev '^(HANDOVER\.md|README\.md)$' || true)"
           git diff --check
       - name: Commit controlled documentation update
         shell: bash
