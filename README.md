@@ -2,98 +2,141 @@
 
 **Competition:** Build, Ship, Shape: Amazon Developer Hackathon 2026  
 **Primary track:** Alexa+ — simulated Alexa+ web experience  
-**Current verified stage:** Stage 04 — controlled tool/action layer  
+**Current verified stage:** Stage 05 — agent/orchestrator  
 **Competition deadline:** 23 October 2026, 20:00 GMT+1 (entrant-supplied competition page)
 
 ## What Host is
 
-Host is an execution agent for people hosting at home. It is deliberately not a generic event-planning chatbot. Its core job is to turn an agreed plan into authoritative, persistent execution state across menu commitment, inventory, shopping, preparation, late changes, and later hands-free live execution.
+Host is an execution agent for people hosting at home. It is deliberately not a generic event-planning chatbot. Its job is to turn an agreed hosting plan into authoritative, persistent execution state across menu commitment, inventory, shopping, preparation, late changes, and eventually hands-free live execution.
 
 Core promise:
 
 > From “people are coming over” to “everything is actually ready.”
 
-A defining rule is that conversational text can never make an action true. Application-facing code must use validated intent tools; those tools invoke the authoritative domain engine, persist successful state changes, and return structured success/failure results.
+A defining rule is that conversation never makes an action true. The agent interprets the request and selects controlled tools; only those validated tools can change authoritative state, persist the result, and create receipts/audit evidence.
 
 ## Verified implementation state
 
-Stage 04 adds the controlled application/tool boundary on top of the verified Stage 02 domain engine and Stage 03 persistence layer. No language-model agent, Alexa simulation UI, voice layer, AWS service, deployment, or demo video is claimed yet.
+Stage 05 adds the customer-facing orchestration layer on top of the verified domain, persistence, and tool layers.
 
 Implemented and directly tested:
 
-- authoritative TypeScript domain state and invariants;
-- versioned persistence with SHA-256 integrity verification and restart recovery;
-- **17 intent-oriented Host tools** covering current application mutations and reads;
-- strict top-level tool input validation and structured unknown-tool failure;
-- positive-integer guest-count enforcement at the tool boundary;
-- parseable confirmation timestamps for confirmation-bound actions;
-- tool descriptors with explicit risk and confirmation metadata;
-- package-root exports that expose `HostToolRuntime` but not `HostDomainEngine`;
-- package subpath blocking for direct domain-engine imports;
-- automatic persistence checkpoints after committed tool mutations;
-- live-session rollback when a persistence checkpoint fails;
-- deterministic menu-proposal simulation behind an adapter;
-- proposal-time dietary/allergen and guest-capacity validation;
-- deterministic product-catalogue simulation behind an adapter;
-- simulated cart/checkout with an idempotency key;
-- reconciliation of checkout currency, reference and total before purchase state is committed;
-- durable failed-action receipts when checkout returns failure, invalid data, or throws;
-- persisted reversible-action metadata and safe latest-revision undo;
-- read-only late-change impact analysis followed by explicit confirmed apply;
-- deliberate invalidation of uncommitted proposals/impacts across restart;
-- complete tool-only shopping, preparation, replanning, history and undo journeys.
+- natural hosting requests can create structured events;
+- missing event information is requested **one question at a time**;
+- natural date/time handling for weekdays, today/tomorrow, named dates, ISO dates, and 12/24-hour times;
+- guest-count numbers cannot be mistaken for clock times;
+- deterministic local intent interpreter for a reliable offline/default path;
+- validated model-backed interpreter contract;
+- resilient fallback when a model provider fails, returns an unknown intent, or gives a weaker low-confidence interpretation;
+- generic JSON model-proxy adapter for later provider integration;
+- menu proposals shown as structured customer choices with working selection actions;
+- menu commitment remains explicitly confirmation-gated;
+- authoritative shopping quantities are returned as structured presentation data;
+- simulated product choices expose real candidates/selection state and clearly state that nothing has been purchased;
+- simulated checkout requires explicit confirmation and preserves the simulation boundary;
+- preparation plans return real task timing/dependency/status data plus executable task actions;
+- status and next-action responses come from authoritative tool state;
+- late guest/constraint changes are analysed read-only before confirmation;
+- confirmed changes preserve unaffected work and use the existing atomic replan path;
+- action history exposes customer-safe receipts/audit data without leaking provider internals;
+- safe undo is confirmation-gated;
+- checkout failure never claims success and offers a fresh confirmation-bound retry;
+- a fresh agent session can explicitly resume an already persisted event without restoring stale confirmations;
+- package-root API exposes the agent while continuing to block `HostDomainEngine` and direct domain subpaths;
+- repository now pins TypeScript as a development dependency and includes a lockfile for reproducible clean-machine builds.
 
-Current verification result: **48 tests passed, 0 failed**.
+Current verification result: **72 tests passed, 0 failed**.
+
+## User experience contract
+
+Stage 05 deliberately separates concise spoken text from richer structured presentation data. A future Alexa-style screen can therefore remain glanceable while still showing useful detail.
+
+Current presentation objects include:
+
+- event summary;
+- menu choices;
+- shopping quantities and status;
+- product candidates and selected demo products;
+- preparation timeline/tasks;
+- late-change impact preview;
+- customer-safe action history;
+- confirmation and error states.
+
+Interaction rules already enforced by tests include:
+
+- ask one question at a time;
+- keep normal spoken responses short;
+- give every surfaced action a working route;
+- use plain language for failures;
+- never claim a simulated purchase is real;
+- never treat failed/pending work as completed;
+- require confirmation for material or transaction-like actions;
+- preserve a usable touch/action route alongside natural-language requests.
+
+## Runtime/model boundary
+
+The verified default runtime is the deterministic `HeuristicIntentInterpreter` behind `HostAgentOrchestrator`. This provides a reproducible fallback and makes the demo usable even if an external model is unavailable.
+
+`ModelBackedIntentInterpreter`, `ResilientIntentInterpreter`, and `JsonModelProxyAdapter` provide a controlled integration point for a later live model provider. **No live external LLM provider, API key, Amazon Bedrock integration, or AWS service is claimed in Stage 05.** A model is never given a direct state-mutation route; model output still terminates at the same validated tool layer.
 
 ## Run locally
 
 Requirements:
 
 - Node.js 22+
-- TypeScript compiler (`tsc`)
+- npm
 
 ```bash
+npm ci
 npm test
 ```
 
-The test command compiles the source and runs the domain, persistence, primary-scenario and tool-runtime suites.
+TypeScript is pinned in `devDependencies`; a machine-global `tsc` installation is not required.
+
+The test command compiles the source and runs the domain, persistence, primary-scenario, tool-runtime, and agent conversation suites.
 
 ## Application-facing API
 
-The package root exports the controlled application surface, including:
+The package root now exposes the controlled customer/application surface, including:
 
+- `HostAgentOrchestrator`
+- `HeuristicIntentInterpreter`
+- `ModelBackedIntentInterpreter`
+- `ResilientIntentInterpreter`
+- `JsonModelProxyAdapter`
 - `HostToolRuntime`
-- tool descriptors/types
-- persistence adapter interface and JSON storage adapter
-- simulated menu, catalogue and checkout adapters
+- agent/tool types and descriptors
+- persistence adapter contract/JSON adapter
+- deterministic simulation adapters
 
-The package root deliberately does **not** export the domain engine or state validator. `package.json` also exposes only the root application entry, so package subpath imports to the domain engine are rejected.
+The package root deliberately does **not** export the domain engine or state validator. `package.json` exposes only the root application entry, so direct package subpath imports to the domain engine remain blocked.
 
 ## Tool surface
 
-Current tools:
+All authoritative mutations continue through the existing 17 tools:
 
 `create_event`, `update_event_constraints`, `propose_menu`, `commit_menu`, `record_inventory`, `build_shopping_plan`, `prepare_cart`, `confirm_cart_action`, `build_preparation_plan`, `mark_task_complete`, `advance_event_status`, `get_next_action`, `get_event_status`, `analyse_change_impact`, `apply_confirmed_change`, `get_action_history`, `undo_reversible_action`.
 
-`advance_event_status` was added at Stage 04 so the existing validated lifecycle mutation is not left as an application-facing bypass around the tool boundary.
-
 ## Simulation boundary
 
-Menu proposals, product candidates and checkout are currently deterministic simulations. They are explicitly adapters and are not represented as calls to Amazon retail, grocery providers, or any external purchasing service.
+Menu proposals, product candidates, and checkout are deterministic simulations. They are explicitly adapters and are not represented as Amazon retail, grocery-provider, or real payment calls.
 
 ## Repository structure
 
-- `src/application/` — public package entry point
+- `src/application/` — supported public package entry
+- `src/agent/` — conversation/orchestration and presentation contract
 - `src/tools/` — validated intent tool descriptors/runtime
-- `src/domain/` — authoritative state engine (internal to application package)
+- `src/domain/` — authoritative state engine, internal to the public package
 - `src/persistence/` — verified persistence/resume layer
 - `src/simulated-services/` — clearly labelled deterministic demo adapters
-- `tests/` — domain, persistence, scenario and tool-boundary verification
+- `tests/` — domain, persistence, scenario, tool, and agent verification
 - `docs/` — public technical documentation
 - `LICENSE` — MIT licence
 
-See `docs/TOOL_LAYER_STAGE04.md` for the Stage 04 design and verified boundary.
+See `docs/AGENT_ORCHESTRATOR_STAGE05.md` for the Stage 05 architecture and verified boundary.
 
 ## Current boundary
 
-The application can now be driven completely through controlled tools, without exposing a supported direct mutation route to future application consumers. The next controlled stage is **Stage 05 — agent/orchestrator**: connect an agent behind an adapter and verify on controlled conversations that it chooses the correct tools, asks for missing information, respects confirmation boundaries, reports authoritative state, replans late changes and recovers from failures.
+The product now has an authoritative backend **and** a controlled conversational/customer interaction contract. What it does not yet have is the polished simulated Alexa+ screen itself.
+
+The next controlled stage is **Stage 06 — Alexa+ simulation UI**. Its target is a complete, attractive, low-friction touch experience that renders the real Stage 05 cards/actions: conversation, event progress, menu choices, shopping, product choices, preparation timeline, change review, confirmations, recovery, and Live Mode. Voice interaction remains the separate Stage 07 gate.
