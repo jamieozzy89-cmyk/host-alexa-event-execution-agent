@@ -14,13 +14,52 @@ jobs:
         with:
           ref: stage06-ui
       - name: Apply exact UI fix
+        shell: bash
         run: |
           set -euo pipefail
-          git apply --check .stage06-ui-fix.patch
-          git apply .stage06-ui-fix.patch
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('web/render.ts')
+          source = path.read_text()
+          old_latest = '''function latestReply(state: HostUiState): AgentReply | undefined {
+            if (state.mode === "live" && state.liveReply) return state.liveReply;
+            for (let index = state.transcript.length - 1; index >= 0; index -= 1) {'''
+          new_latest = '''function latestReply(state: HostUiState): AgentReply | undefined {
+            if (state.mode === "live" && state.liveReply) return state.liveReply;
+            if (state.mode === "activity" && state.activityReply) return state.activityReply;
+            for (let index = state.transcript.length - 1; index >= 0; index -= 1) {'''
+          old_plan = '''  if (!reply?.cards.length) {
+              const welcome = el("article", "welcome-card");
+              welcome.append(el("p", "eyebrow", "Alexa+ simulation"));
+              welcome.append(el("h1", "welcome-title", "Turn hosting into a plan you can actually finish."));
+              welcome.append(el("p", "welcome-copy", "Tell Host what you're planning. It will keep the menu, shopping, preparation and late changes tied to real execution state—not just conversation."));
+              panel.append(welcome);
+              return panel;
+            }'''
+          new_plan = '''  if (!reply?.cards.length) {
+              if (state.latest.event) panel.append(renderEvent(state.latest.event));
+              else {
+                const welcome = el("article", "welcome-card");
+                welcome.append(el("p", "eyebrow", "Alexa+ simulation"));
+                welcome.append(el("h1", "welcome-title", "Turn hosting into a plan you can actually finish."));
+                welcome.append(el("p", "welcome-copy", "Tell Host what you're planning. It will keep the menu, shopping, preparation and late changes tied to real execution state—not just conversation."));
+                panel.append(welcome);
+              }
+              const actions = renderActionStrip(reply, handlers, state);
+              if (actions) panel.append(actions);
+              return panel;
+            }'''
+          if source.count(old_latest) != 1:
+              raise SystemExit('latestReply source pattern did not match exactly once')
+          if source.count(old_plan) != 1:
+              raise SystemExit('planWorkspace source pattern did not match exactly once')
+          source = source.replace(old_latest, new_latest).replace(old_plan, new_plan)
+          path.write_text(source)
+          PY
           npm install --ignore-scripts
           npm run typecheck:web
       - name: Commit corrected renderer
+        shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
