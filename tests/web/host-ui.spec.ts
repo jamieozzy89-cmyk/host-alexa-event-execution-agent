@@ -3,8 +3,9 @@ import { expect, test, type Page } from "@playwright/test";
 const PRIMARY_REQUEST = "I'm hosting dinner for six people on Saturday at 7pm with a £120 budget, one vegetarian guest and a nut allergy, with limited same-day cooking";
 
 async function openClean(page: Page): Promise<void> {
-  await page.addInitScript(() => window.localStorage.clear());
   await page.goto("/");
+  await page.evaluate(() => window.localStorage.clear());
+  await page.reload();
   await expect(page.getByRole("button", { name: "Plan a dinner" })).toBeVisible();
 }
 

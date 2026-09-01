@@ -384,6 +384,7 @@ function renderLive(state: HostUiState, handlers: UiHandlers): HTMLElement {
   const head = el("div", "mode-heading");
   head.append(el("p", "eyebrow", "Hands-busy view"), el("h1", "mode-title", "Live Mode"), el("p", "mode-copy", "One current action, large controls, no extra clutter."));
   view.append(head);
+  if (reply?.speech) view.append(el("p", "live-status", reply.speech));
   if (prep) view.append(renderPrep(prep, reply, handlers, state, true));
   else {
     const empty = cardShell("Nothing ready yet", "Live Mode");
