@@ -18,7 +18,10 @@ export function aggregateRequirements(menu: Menu): AggregateRequirement[] {
         continue;
       }
       if (existing.unit !== ingredient.unit) {
-        throw new DomainError(`Cannot reconcile required units for ${ingredient.itemId}: ${existing.unit} vs ${ingredient.unit}.`, "UNIT_MISMATCH");
+        throw new DomainError(
+          `Cannot reconcile required units for ${ingredient.itemId}: ${existing.unit} vs ${ingredient.unit}.`,
+          "UNIT_MISMATCH",
+        );
       }
       existing.quantity += ingredient.quantity;
     }
@@ -30,7 +33,10 @@ export function buildShoppingPlan(menu: Menu, inventory: Record<string, Inventor
   return aggregateRequirements(menu).map((required) => {
     const onHand = inventory[required.itemId];
     if (onHand && onHand.unit !== required.unit) {
-      throw new DomainError(`Cannot reconcile inventory unit for ${required.itemId}: ${onHand.unit} vs ${required.unit}.`, "UNIT_MISMATCH");
+      throw new DomainError(
+        `Cannot reconcile inventory unit for ${required.itemId}: ${onHand.unit} vs ${required.unit}.`,
+        "UNIT_MISMATCH",
+      );
     }
     const onHandQuantity = onHand?.quantity ?? 0;
     const toBuyQuantity = Math.max(required.quantity - onHandQuantity, 0);
@@ -54,7 +60,9 @@ export function buildPreparationTasks(
   previousTasks: Record<string, PreparationTask> = {},
 ): Record<string, PreparationTask> {
   const eventTime = Date.parse(eventStartAt);
-  if (Number.isNaN(eventTime)) throw new DomainError("Event start time is invalid.", "INVALID_EVENT_TIME");
+  if (Number.isNaN(eventTime)) {
+    throw new DomainError("Event start time is invalid.", "INVALID_EVENT_TIME");
+  }
 
   const tasks: Record<string, PreparationTask> = {};
   const sourceIdsByTask = new Map<string, string[]>();
