@@ -4,7 +4,7 @@ p = Path('HANDOVER.md')
 s = p.read_text()
 s = s.replace(
     '**Next controlled stage:** Stage 08 — competition integration decision',
-    '**Current competition decision stage:** Stage 08 — Open Source locked; AWS Builder conditional on verified AWS access  \n**Next executable product stage if AWS access remains unavailable:** Stage 09 — hardening'
+    '**Current competition decision stage:** Stage 08 — Open Source locked; AWS Builder conditional on verified AWS access\n**Next executable product stage if AWS access remains unavailable:** Stage 09 — hardening'
 )
 marker = '## Current simulation and capability boundaries\n'
 stage8 = '''## Stage 08 — competition integration decision
