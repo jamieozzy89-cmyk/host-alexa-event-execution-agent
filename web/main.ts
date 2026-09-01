@@ -263,7 +263,7 @@ const handlers: UiHandlers = {
 
 async function initialise(): Promise<void> {
   const storedTheme = readStoredTheme();
-  applyTheme(storedTheme === "light" ? "light" : "dark");
+  applyTheme(storedTheme === "dark" ? "dark" : "light");
   renderNow();
 
   const activeEventId = runtime.activeEventId();

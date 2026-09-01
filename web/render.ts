@@ -90,7 +90,8 @@ function cardShell(title: string, eyebrow?: string): HTMLElement {
 }
 
 function renderEvent(card: Extract<AgentCard, { type: "event_summary" }>): HTMLElement {
-  const wrap = cardShell(card.title, "Current plan");
+  const wrap = cardShell(card.title, "Tonight at a glance");
+  wrap.classList.add("event-card");
   const grid = el("dl", "summary-grid");
   const fields: Array<[string, string]> = [
     ["When", formatDate(card.startAt)],
@@ -108,7 +109,8 @@ function renderEvent(card: Extract<AgentCard, { type: "event_summary" }>): HTMLE
 }
 
 function renderMenu(card: Extract<AgentCard, { type: "menu_options" }>, reply: AgentReply | undefined, handlers: UiHandlers, state: HostUiState): HTMLElement {
-  const wrap = cardShell(card.title, "Choose one");
+  const wrap = cardShell(card.title, "Choose the table");
+  wrap.classList.add("menu-card");
   const rail = el("div", "card-rail");
   for (const menu of card.menus) {
     const option = el("article", "choice-card");
@@ -131,7 +133,8 @@ function renderMenu(card: Extract<AgentCard, { type: "menu_options" }>, reply: A
 }
 
 function renderShopping(card: Extract<AgentCard, { type: "shopping_list" }>, handlers: UiHandlers): HTMLElement {
-  const wrap = cardShell(card.title, "Authoritative quantities");
+  const wrap = cardShell(card.title, "What still needs buying");
+  wrap.classList.add("shopping-card");
   const open = card.items.filter((item) => item.toBuyQuantity > 0 && item.status !== "simulated_purchased");
   const purchased = card.items.filter((item) => item.status === "simulated_purchased").length;
   const stats = el("div", "stat-row");
@@ -161,6 +164,7 @@ function shoppingRow(item: Extract<AgentCard, { type: "shopping_list" }>["items"
 
 function renderProducts(card: Extract<AgentCard, { type: "product_choices" }>): HTMLElement {
   const wrap = cardShell(card.title, "Simulation only — no real order");
+  wrap.classList.add("products-card");
   const rail = el("div", "card-rail product-rail");
   for (const item of card.items) {
     const option = el("article", "choice-card product-card");
@@ -182,7 +186,8 @@ function renderProducts(card: Extract<AgentCard, { type: "product_choices" }>): 
 }
 
 function renderPrep(card: Extract<AgentCard, { type: "prep_timeline" }>, reply: AgentReply | undefined, handlers: UiHandlers, state: HostUiState, live = false): HTMLElement {
-  const wrap = cardShell(live ? "Live preparation" : card.title, live ? "One thing at a time" : "Dependency-aware plan");
+  const wrap = cardShell(live ? "Live preparation" : card.title, live ? "One thing at a time" : "Kitchen run sheet");
+  wrap.classList.add(live ? "live-prep-card" : "prep-card");
   const tasks = live ? card.tasks.filter((task) => task.status === "ready").slice(0, 1) : card.tasks;
   if (tasks.length === 0) {
     wrap.append(el("p", "empty-state", live ? "No prep task is ready right now." : "No preparation tasks yet."));
@@ -216,6 +221,7 @@ function renderPrep(card: Extract<AgentCard, { type: "prep_timeline" }>, reply: 
 
 function renderImpact(card: Extract<AgentCard, { type: "change_impact" }>): HTMLElement {
   const wrap = cardShell(card.title, "Checked — not applied yet");
+  wrap.classList.add("impact-card");
   const list = el("div", "impact-grid");
   const values: Array<[string, string]> = [
     ["Guest count", card.guestCountChanged ? "Changes" : "Unchanged"],
@@ -233,6 +239,7 @@ function renderImpact(card: Extract<AgentCard, { type: "change_impact" }>): HTML
 
 function renderHistory(card: Extract<AgentCard, { type: "history" }>): HTMLElement {
   const wrap = cardShell(card.title, "Receipts and safe reversals");
+  wrap.classList.add("history-card");
   const list = el("div", "history-list");
   if (!card.receipts.length) list.append(el("p", "empty-state", "No recorded actions yet."));
   for (const receipt of [...card.receipts].reverse()) {
@@ -248,6 +255,7 @@ function renderHistory(card: Extract<AgentCard, { type: "history" }>): HTMLEleme
 
 function renderConfirmation(card: Extract<AgentCard, { type: "confirmation" }>, reply: AgentReply | undefined, handlers: UiHandlers, state: HostUiState): HTMLElement {
   const wrap = cardShell(card.title, "Your confirmation is required");
+  wrap.classList.add("decision-card");
   wrap.classList.add("confirmation-card");
   wrap.append(el("p", "confirmation-body", card.body), el("p", "fine-print", card.consequence));
   const actions = el("div", "confirmation-actions");
@@ -356,7 +364,7 @@ function renderComposer(state: HostUiState, handlers: UiHandlers): HTMLElement {
   form.setAttribute("aria-label", "Send a message to Host");
   const input = el("input", "composer-input") as HTMLInputElement;
   input.name = "message";
-  input.placeholder = "Tell Host what changed…";
+  input.placeholder = "Ask Host, or tell it what changed…";
   input.autocomplete = "off";
   input.disabled = state.busy;
   input.setAttribute("aria-label", "Message Host");
@@ -378,9 +386,9 @@ function renderComposer(state: HostUiState, handlers: UiHandlers): HTMLElement {
 function renderPlan(state: HostUiState, handlers: UiHandlers): HTMLElement {
   const main = el("div", "plan-layout");
   const conversation = el("section", "conversation-panel");
-  conversation.append(el("div", "section-kicker", "Conversation"), renderTranscript(state));
+  conversation.append(el("div", "section-kicker", "Ask Host"), renderTranscript(state));
   conversation.append(renderComposer(state, handlers));
-  main.append(conversation, planWorkspace(state, handlers));
+  main.append(planWorkspace(state, handlers), conversation);
   return main;
 }
 
@@ -392,7 +400,7 @@ function renderLive(state: HostUiState, handlers: UiHandlers): HTMLElement {
   const title = el("h1", "mode-title focus-target", "Live Mode");
   title.tabIndex = -1;
   title.dataset.focusKey = "mode-heading";
-  head.append(el("p", "eyebrow", "Hands-busy view"), title, el("p", "mode-copy", "One current action, large controls, no extra clutter."));
+  head.append(el("p", "eyebrow", "Kitchen mode"), title, el("p", "mode-copy", "One decision at a time while your hands are busy."));
   view.append(head);
   if (reply?.speech) view.append(el("p", "live-status", reply.speech));
   if (prep) view.append(renderPrep(prep, reply, handlers, state, true));
@@ -452,7 +460,7 @@ function renderActivity(state: HostUiState, handlers: UiHandlers): HTMLElement {
   const title = el("h1", "mode-title focus-target", "Activity");
   title.tabIndex = -1;
   title.dataset.focusKey = "mode-heading";
-  head.append(el("p", "eyebrow", "Verifiable state"), title, el("p", "mode-copy", "Receipts show what Host actually completed, failed or reversed."));
+  head.append(el("p", "eyebrow", "Execution record"), title, el("p", "mode-copy", "A receipt for what actually happened — not what the conversation claimed."));
   view.append(head);
   if (history) view.append(renderHistory(history));
   else view.append(el("p", "empty-state", "No action history is available yet."));
@@ -489,7 +497,7 @@ function renderHeader(state: HostUiState, handlers: UiHandlers): HTMLElement {
   const mark = el("span", "brand-mark", "H");
   mark.setAttribute("aria-hidden", "true");
   const copy = el("div", "brand-copy");
-  copy.append(el("strong", "brand-name", "Host"), el("span", "brand-subtitle", "Alexa+ simulation"));
+  copy.append(el("strong", "brand-name", "HOST"), el("span", "brand-subtitle", "Hosting execution · Alexa+ simulation"));
   brand.append(mark, copy);
 
   const nav = el("nav", "mode-nav");
