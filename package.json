@@ -24,7 +24,7 @@
     "verify:stage09": "npm test && npm run build:web && npm run test:web"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=22.12.0"
   },
   "license": "MIT",
   "devDependencies": {
