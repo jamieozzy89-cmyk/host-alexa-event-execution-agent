@@ -2,7 +2,7 @@
 
 **Competition:** Build, Ship, Shape: Amazon Developer Hackathon 2026  
 **Primary track:** Alexa+ — simulated Alexa+ web experience  
-**Current verified stage:** Stage 06 — Alexa+ simulation UI  
+**Current verified stage:** Stage 07 — voice + touch interaction  
 **Competition deadline:** 23 October 2026, 20:00 GMT+1 (entrant-supplied competition page)
 
 ## What Host is
@@ -13,25 +13,60 @@ Core promise:
 
 > From “people are coming over” to “everything is actually ready.”
 
-A defining rule is that conversation never makes an action true. The agent interprets the request and selects controlled tools; only those validated tools can change authoritative state, persist the result, and create receipts/audit evidence.
+A defining rule is that conversation, voice output, and presentation never make an action true. The agent interprets the request and selects controlled tools; only validated application/tool state can establish completion, persist the result, and create receipts/audit evidence.
 
 ## Current verified product
 
-Stage 06 adds the competition-facing simulated Alexa+ browser experience on top of the already verified domain, persistence, tool and agent/orchestrator layers.
+Host now combines:
 
-The application now provides three customer views:
+- authoritative domain/state engine;
+- persistence and restart/reload recovery;
+- 17 validated execution tools;
+- controlled agent/orchestrator;
+- touch-first simulated Alexa+ web interface;
+- browser voice recognition and speech output when supported;
+- explicit voice-unavailable fallback to touch/keyboard;
+- customer-safe receipt/history evidence.
+
+The browser experience provides three customer views:
 
 - **Plan** — natural conversation plus structured current results;
 - **Live** — one ready preparation task at a time with large hands-busy controls and visible authoritative next-step guidance;
 - **Activity** — customer-safe receipts showing what actually succeeded, failed or was reversed.
 
-Implemented product capabilities include:
+## Voice interaction
+
+Stage 07 adds a browser voice adapter around the existing `HostAgentOrchestrator`. It does not create a second agent or state engine.
+
+When the browser provides the required Web Speech capabilities, a user can activate Voice once and continue through conversational turns using speech recognition and speech synthesis. Recognised text is routed through the same `handleText()` path as typed conversation, and Host speaks the same authoritative `AgentReply.speech` returned by the application.
+
+Verified voice behavior includes:
+
+- start/stop voice control;
+- listening, processing, speaking, idle, unavailable and error states;
+- continuous turn-taking after the initial user activation;
+- spoken event creation;
+- spoken numbered menu choices;
+- `choose option one/two/three` routed through the existing confirmation-gated menu path;
+- spoken `yes`/`no` confirmation and cancellation;
+- spoken shopping/product/prep/status/history requests;
+- spoken simulated-checkout request and confirmation;
+- spoken `what's next` guidance;
+- spoken `done` resolved against the **authoritative current next task**, not visual context or guesswork;
+- customer-safe voice failure messages;
+- explicit touch/keyboard fallback when recognition/output is unavailable.
+
+Browser voice support varies by browser/device/permission state. Host therefore never treats voice availability as required for the complete touch path.
+
+## Core product capabilities
+
+Implemented and verified capabilities include:
 
 - create a structured hosting event from natural language;
 - ask for missing event information one question at a time;
 - natural weekday/today/tomorrow/named/ISO date handling;
 - 12/24-hour time handling without confusing guest counts for times;
-- show structured menu choices;
+- show and speak menu choices;
 - require explicit confirmation before committing a menu;
 - calculate authoritative shopping deficits;
 - show deterministic demo product candidates;
@@ -44,36 +79,46 @@ Implemented product capabilities include:
 - confirm and apply bounded replanning while preserving unaffected work;
 - resume persisted event state after page reload without restoring stale confirmations;
 - show customer-safe action history/receipts;
-- preserve a working touch route for surfaced actions;
+- preserve touch/keyboard routes for surfaced actions;
 - support responsive large-display and mobile layouts;
 - provide light/dark presentation and visible keyboard focus;
-- maintain a 48 × 48 px tested minimum interactive-target floor.
+- maintain a tested 48 × 48 px minimum interactive-target floor.
 
 ## Verification status
 
-### Stage 02–05 regression
+### Backend/application regression
 
-**72 tests passed, 0 failed.**
+Stage 02–07 suite: **74 tests passed, 0 failed.**
 
-### Stage 06 browser acceptance
+### Browser acceptance
 
-**8 tests passed, 0 failed.**
+Stage 06 + Stage 07 browser suite: **14 tests passed, 0 failed.**
 
-The four Stage 06 browser scenarios each pass in both configured Playwright projects:
+Configured Playwright projects:
 
 - `echo-show`: 1280 × 800, touch enabled;
 - `mobile`: 390 × 844, touch/mobile enabled.
 
-Verified browser scenarios:
+The 14 cases consist of:
 
-1. complete visible-touch hosting journey from event creation through Live Mode and Activity receipts;
-2. late vegan guest impact preview and confirmed update;
-3. reload/resume of authoritative event state without stale confirmation UI;
-4. interactive-target floor and no document-level horizontal overflow.
+- eight retained Stage 06 touch cases;
+- six Stage 07 voice cases (three voice scenarios in each viewport).
 
-The final successful GitHub Actions Stage 06 verification run was `33501409738`.
+Voice scenarios verify:
 
-See `reports/STAGE06_VERIFICATION.md` for the acceptance record and defect/fix history.
+1. complete voice-only core execution journey after one activation, including receipts;
+2. spoken cancellation of a pending material action and correct recovery guidance;
+3. explicit voice-unavailable fallback with touch path retained.
+
+Final successful Stage 07 GitHub Actions run: `33552445789`.
+
+See `reports/STAGE07_VERIFICATION.md` for the complete acceptance record and `docs/VOICE_INTERACTION_STAGE07.md` for the voice architecture.
+
+### Automated voice-test boundary
+
+Browser voice acceptance uses deterministic fake Web Speech recognition/synthesis objects injected into Chromium. This directly tests Host's browser voice-controller lifecycle, orchestration routing, confirmation behavior, spoken output, state effects and fallback behavior without depending on physical microphone acoustics or a remote speech service.
+
+Physical microphone/browser compatibility is therefore a later Stage 09 manual hardening check, not a claim made by the automated suite.
 
 ## User experience contract
 
@@ -99,7 +144,8 @@ Interaction rules enforced by the application/tests include:
 - never claim a simulated purchase is real;
 - never treat failed/pending work as completed;
 - require confirmation for material or transaction-like actions;
-- preserve equivalent controlled application routes across UI interaction methods.
+- preserve equivalent controlled routes across voice and touch where the current journey exposes them;
+- explicitly retain touch/keyboard fallback if browser voice fails or is unavailable.
 
 ## Runtime/model boundary
 
@@ -116,6 +162,8 @@ Persistence uses `JsonStoragePersistenceAdapter` over browser `localStorage`. Th
 The product explicitly identifies itself as an **Alexa+ simulation**.
 
 Menu proposals, product candidates, and checkout remain deterministic simulations. They are not represented as Amazon retail, grocery-provider, payment, AWS, or physical Alexa-device calls.
+
+Voice uses browser Web Speech capability where available. It is not represented as physical Alexa-device integration or certification.
 
 ## Run locally
 
@@ -143,17 +191,17 @@ Build the browser application:
 npm run build:web
 ```
 
-For Stage 06 browser verification on a machine with Playwright system dependencies:
+Install the Playwright Chromium runtime/dependencies and run browser acceptance:
 
 ```bash
 npx playwright install --with-deps chromium
 npm run test:web
 ```
 
-Or run the complete Stage 06 gate after the browser dependency install:
+Run the complete Stage 07 gate after browser dependencies are installed:
 
 ```bash
-npm run verify:stage06
+npm run verify:stage07
 ```
 
 ## Application-facing API
@@ -186,17 +234,15 @@ All authoritative mutations continue through the existing 17 tools:
 - `src/domain/` — authoritative state engine, internal to the public package;
 - `src/persistence/` — persistence/resume layer;
 - `src/simulated-services/` — clearly labelled deterministic demo adapters;
-- `web/` — Stage 06 simulated Alexa+ browser experience;
-- `tests/` — backend/application plus browser acceptance verification;
+- `web/` — simulated Alexa+ web experience and browser voice adapter;
+- `tests/` — backend/application and browser touch/voice verification;
 - `docs/` — permanent architecture records;
 - `reports/` — permanent verification records;
 - `HANDOVER.md` — self-contained current continuation state;
 - `LICENSE` — MIT licence.
 
-See `docs/ALEXA_SIMULATION_UI_STAGE06.md` for the Stage 06 browser architecture and `HANDOVER.md` for the exact controlled continuation point.
-
 ## Current boundary
 
-The project now has the authoritative execution engine, persistence, validated tools, controlled agent/orchestrator, and a verified touch-first simulated Alexa+ interface.
+The project now has the authoritative execution engine, persistence, validated tools, controlled agent/orchestrator, verified touch-first simulated Alexa+ interface, and a verified browser voice-only route for the core journey.
 
-The next controlled stage is **Stage 07 — voice interaction**. Its exit condition is that the core Host journey can be driven and understood through voice without depending on visual information, while preserving the same authoritative state/tool boundaries and keeping touch as an equivalent route.
+The next controlled stage is **Stage 08 — competition integration decision**. The next decision is whether an AWS Builder mini-challenge integration adds genuine product/judging value without weakening or complicating the primary Alexa+ experience. AWS is not required for the primary simulated Alexa+ route and must not be added merely to claim another technology.
