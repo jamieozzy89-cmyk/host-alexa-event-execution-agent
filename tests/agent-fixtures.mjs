@@ -11,8 +11,8 @@ import { HostAgentOrchestrator } from "../dist/src/agent/orchestrator.js";
 import { HeuristicIntentInterpreter } from "../dist/src/agent/interpreter.js";
 
 export function makeAgent(options = {}) {
-  const storage = new MemoryStorage();
-  const persistence = new JsonStoragePersistenceAdapter(storage);
+  const storage = options.storage ?? new MemoryStorage();
+  const persistence = options.persistence ?? new JsonStoragePersistenceAdapter(storage);
   const cart = options.cart ?? new DeterministicSimulatedCartAdapter();
   const runtime = new HostToolRuntime(persistence, {
     menuProposals: createDefaultMenuProposalAdapter(),

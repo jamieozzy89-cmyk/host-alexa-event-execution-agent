@@ -35,11 +35,14 @@ function zonedToUtc(year: number, month: number, day: number, hour: number, minu
 }
 
 function parseTime(text: string): { hour: number; minute: number } {
-  const match = text.match(/(?:\bat\s*)?\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\b/i);
+  const match = text.match(/(?:\bat\s*\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\b|\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b|\b(\d{1,2}):(\d{2})\b)/i);
   if (!match) return { hour: 19, minute: 0 };
-  let hour = Number(match[1]);
-  const minute = match[2] ? Number(match[2]) : 0;
-  const suffix = match[3]?.toLowerCase();
+  const hourText = match[1] ?? match[4] ?? match[7];
+  const minuteText = match[2] ?? match[5] ?? match[8];
+  const suffix = (match[3] ?? match[6])?.toLowerCase();
+  if (!hourText) return { hour: 19, minute: 0 };
+  let hour = Number(hourText);
+  const minute = minuteText ? Number(minuteText) : 0;
   if (minute > 59 || hour > 23) return { hour: 19, minute: 0 };
   if (suffix === "pm" && hour < 12) hour += 12;
   if (suffix === "am" && hour === 12) hour = 0;

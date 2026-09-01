@@ -250,3 +250,56 @@ test("resilient interpreter falls back deterministically when a model interprete
   assert.equal(result.status, "ok");
   assert.equal(result.cards[0]?.guestCount, 6);
 });
+
+test("package root exposes the Stage 05 agent without exposing the domain engine", async () => {
+  const api = await import("host-alexa-event-execution-agent");
+  assert.equal(typeof api.HostAgentOrchestrator, "function");
+  assert.equal(typeof api.HeuristicIntentInterpreter, "function");
+  assert.equal(typeof api.ResilientIntentInterpreter, "function");
+  assert.equal("HostDomainEngine" in api, false);
+});
+
+test("guest-count numbers are never interpreted as event clock times", async () => {
+  const { agent } = makeAgent();
+  const result = await agent.handleText("numeric-time", "I'm hosting dinner for 6 people on Saturday with a £120 budget");
+  assert.equal(result.status, "ok");
+  assert.equal(result.cards[0]?.startAt, "2026-09-05T18:00:00.000Z");
+});
+
+test("low-confidence model guesses fall back to the stronger deterministic interpretation", async () => {
+  const weakModel = { async infer() { return { kind: "undo", confidence: 0.2, slots: {} }; } };
+  const interpreter = new ResilientIntentInterpreter(new ModelBackedIntentInterpreter(weakModel), new HeuristicIntentInterpreter());
+  const { agent } = makeAgent({ interpreter });
+  const result = await createEvent(agent, "weak-model");
+  assert.equal(result.status, "ok");
+  assert.equal(result.cards[0]?.guestCount, 6);
+});
+
+test("a fresh agent can safely resume persisted event state without restoring stale confirmation state", async () => {
+  const first = makeAgent();
+  await createEvent(first.agent, "before-reload");
+  await chooseFirstMenu(first.agent, "before-reload");
+  const second = makeAgent({ persistence: first.persistence, eventId: "agent-dinner" });
+  const beforeResume = await second.agent.handleText("after-reload", "status");
+  assert.equal(beforeResume.status, "needs_input");
+  const resumed = await second.agent.resumeConversation("after-reload", "agent-dinner");
+  assert.equal(resumed.status, "ok");
+  assert.equal(resumed.cards[0]?.type, "event_summary");
+  assert.ok(resumed.cards[0]?.revision >= 2);
+  assert.equal(second.agent.getConversationState("after-reload").pending, undefined);
+  const status = await second.agent.handleText("after-reload", "status");
+  assert.equal(status.status, "ok");
+});
+
+test("failed checkout history stays customer-safe and does not expose provider internals", async () => {
+  const cart = new DeterministicSimulatedCartAdapter();
+  const { agent } = makeAgent({ cart });
+  await prepareShopping(agent, "safe-history");
+  cart.failNext("SIMULATED_CHECKOUT_ADAPTER_ERROR", "adapter stack provider secret-ish detail");
+  await agent.handleText("safe-history", "checkout");
+  await agent.handleText("safe-history", "yes");
+  const history = await agent.handleText("safe-history", "history");
+  const visible = JSON.stringify({ speech: history.speech, cards: history.cards });
+  assert.doesNotMatch(visible, /adapter stack|provider secret|schema|idempotency/i);
+  assert.match(visible, /nothing was marked as purchased|did not complete/i);
+});

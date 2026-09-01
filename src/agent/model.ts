@@ -82,7 +82,10 @@ export class ResilientIntentInterpreter implements IntentInterpreter {
 
   async interpret(text: string, context: IntentContext): Promise<InterpretedHostIntent> {
     try {
-      return await this.preferred.interpret(text, context);
+      const preferred = await this.preferred.interpret(text, context);
+      if (preferred.kind !== "unknown" && preferred.confidence >= 0.65) return preferred;
+      const fallback = await this.fallback.interpret(text, context);
+      return fallback.confidence > preferred.confidence ? fallback : preferred;
     } catch {
       return this.fallback.interpret(text, context);
     }

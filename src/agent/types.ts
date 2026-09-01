@@ -149,12 +149,12 @@ export interface HostAgentDependencies {
 }
 
 export interface EventDraft {
-  name?: string;
-  guestCount?: number;
-  budget?: number;
+  name?: string | undefined;
+  guestCount?: number | undefined;
+  budget?: number | undefined;
   currency: string;
   timezone: string;
-  startAt?: string;
+  startAt?: string | undefined;
   constraints: Constraint[];
   preferences: string[];
 }
@@ -168,10 +168,10 @@ export interface PendingConfirmation {
 }
 
 export interface ConversationState {
-  eventId?: string;
-  draft?: EventDraft;
-  awaitingField?: "guestCount" | "startAt" | "budget";
-  pending?: PendingConfirmation;
+  eventId?: string | undefined;
+  draft?: EventDraft | undefined;
+  awaitingField?: "guestCount" | "startAt" | "budget" | undefined;
+  pending?: PendingConfirmation | undefined;
   lastMenus?: Menu[];
   lastShopping?: ShoppingItem[];
   lastTasks?: PreparationTask[];

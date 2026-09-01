@@ -71,14 +71,14 @@ export function historyCard(receipts: ActionReceipt[], audit: AuditEvent[]): His
       id: receipt.id,
       action: humanAction(receipt.actionType),
       status: receipt.status,
-      summary: receipt.resultSummary,
+      summary: customerReceiptSummary(receipt),
       reversible: receipt.reversible,
     })),
     audit: audit.map((event) => ({
       id: event.id,
       action: humanAction(event.action),
       result: event.result,
-      delta: event.delta,
+      delta: event.result === "failed" ? `${humanAction(event.action)} did not complete.` : event.delta,
       beforeRevision: event.beforeRevision,
       afterRevision: event.afterRevision,
     })),
@@ -123,6 +123,17 @@ export function impactCard(impact: {
     removedTaskCount: impact.delta.removedTaskIds.length,
     preservedCompletedTaskCount: impact.delta.preservedCompletedTaskIds.length,
   };
+}
+
+export function customerReceiptSummary(receipt: ActionReceipt): string {
+  const action = humanAction(receipt.actionType);
+  if (receipt.status === "failed") {
+    if (receipt.actionType === "confirm_cart_action") return "Simulated checkout failed; nothing was marked as purchased.";
+    return `${action} did not complete.`;
+  }
+  if (receipt.status === "reversed") return `${action} was reversed.`;
+  if (receipt.status === "pending") return `${action} is waiting for confirmation.`;
+  return `${action} completed.`;
 }
 
 export function humanAction(action: string): string {

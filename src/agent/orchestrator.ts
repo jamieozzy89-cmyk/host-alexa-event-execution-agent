@@ -4,8 +4,8 @@ import { HostToolRuntime } from "../tools/runtime.js";
 import { parseNaturalStartAt } from "./date.js";
 import { friendlyToolFailure } from "./friendly-errors.js";
 import { HeuristicIntentInterpreter } from "./interpreter.js";
-import { eventSummaryCard, historyCard, impactCard, menuCard, prepCard, productCard, shoppingCard } from "./presentation.js";
-import type { AgentAction, AgentReply, ConversationState, EventDraft, HostAgentDependencies, IntentContext, IntentInterpreter, PendingConfirmation } from "./types.js";
+import { customerReceiptSummary, eventSummaryCard, historyCard, impactCard, menuCard, prepCard, productCard, shoppingCard } from "./presentation.js";
+import type { AgentAction, AgentReply, ConversationState, EventDraft, HostAgentDependencies, HostIntentSlots, IntentContext, IntentInterpreter, PendingConfirmation } from "./types.js";
 
 function shorten(value: string, max = 34): string {
   return value.length <= max ? value : `${value.slice(0, max - 1)}…`;
@@ -19,8 +19,8 @@ function reply(params: {
   displayText?: string;
   cards?: AgentReply["cards"];
   actions?: AgentAction[];
-  eventId?: string;
-  question?: string;
+  eventId?: string | undefined;
+  question?: string | undefined;
 }): AgentReply {
   return {
     status: params.status,
@@ -92,6 +92,31 @@ export class HostAgentOrchestrator {
 
   getConversationState(conversationId: string): ConversationState {
     return structuredClone(this.state(conversationId));
+  }
+
+  async resumeConversation(conversationId: string, eventId: string): Promise<AgentReply> {
+    const state = this.state(conversationId);
+    const result = await this.runtime.execute({ name: "get_event_status", input: { eventId } }) as HostToolResult<EventStatusView>;
+    if (!result.ok) return this.failure(result, state);
+    state.eventId = eventId;
+    state.draft = undefined;
+    state.awaitingField = undefined;
+    state.pending = undefined;
+    delete state.lastMenus;
+    delete state.lastShopping;
+    delete state.lastTasks;
+    delete state.lastReceipts;
+    delete state.lastAudit;
+    return reply({
+      status: "ok",
+      speech: `Welcome back. ${result.data.event.name} is restored and ready to continue.`,
+      eventId,
+      cards: [eventCardFromStatus(result.data)],
+      actions: [
+        { type: "request", label: "Check status", request: "status" },
+        { type: "request", label: "What's next", request: "next" },
+      ],
+    });
   }
 
   private state(conversationId: string): ConversationState {
@@ -197,7 +222,7 @@ export class HostAgentOrchestrator {
     }
   }
 
-  private async startEvent(state: ConversationState, slots: Parameters<IntentInterpreter["interpret"]> extends never ? never : import("./types.js").HostIntentSlots): Promise<AgentReply> {
+  private async startEvent(state: ConversationState, slots: HostIntentSlots): Promise<AgentReply> {
     const draft: EventDraft = state.draft ?? {
       currency: slots.currency ?? this.defaultCurrency,
       timezone: slots.timezone ?? this.defaultTimezone,
@@ -462,7 +487,7 @@ export class HostAgentOrchestrator {
     const last = result.data.receipts.at(-1);
     return reply({
       status: "ok",
-      speech: last ? `The latest recorded action is ${last.resultSummary}` : "There isn't any recorded action history yet.",
+      speech: last ? `Latest: ${customerReceiptSummary(last)}` : "There isn't any recorded action history yet.",
       eventId: state.eventId,
       cards: [historyCard(result.data.receipts, result.data.audit)],
       actions: result.data.reversibleReceiptIds.length ? [{ type: "request", label: "Undo latest safe change", request: "undo" }] : [],
@@ -489,7 +514,7 @@ export class HostAgentOrchestrator {
     return confirmationReply(state, state.pending);
   }
 
-  private async previewChange(state: ConversationState, slots: import("./types.js").HostIntentSlots): Promise<AgentReply> {
+  private async previewChange(state: ConversationState, slots: HostIntentSlots): Promise<AgentReply> {
     const status = await this.currentStatus(state);
     if (!status) return this.noEvent();
     if (!status.ok) return this.failure(status, state);
