@@ -165,7 +165,7 @@ The same Stage 09 test/security gate passed after this change.
 
 The permanent Stage 09 product/test/documentation blobs were assembled directly on top of Stage 08 `main`, excluding all temporary Stage 09 transformation scripts, triggers and verification workflows.
 
-First clean candidate commit:
+Clean candidate commit:
 
 `7498cbe7e10fbe6df068d7eb91e9793c06284c79`
 
@@ -173,7 +173,7 @@ Clean release verification workflow:
 
 `33560083418`
 
-That candidate passed:
+That exact release candidate passed:
 
 - dependency/Chromium installation;
 - **74/74** backend/application tests;
@@ -182,14 +182,6 @@ That candidate passed:
 - production dependency audit;
 - injection/direct-domain boundary scans;
 - clean-tree checks confirming Stage 09 development workflows/scripts were absent from the candidate.
-
-The verification report was then updated to record that successful clean-candidate evidence. Because documentation is part of the controlled release tree, a final release candidate was rebuilt rather than silently changing the already-tested tree.
-
-Final Stage 09 release candidate commit:
-
-`512a81beb212850db10309e0783fe97a53b5511b`
-
-The final candidate differs from the first verified clean candidate only in this permanent verification report, which records the first candidate's successful clean-release gate. Final publication still requires checking that exact candidate tree before moving `main`.
 
 ## Dependency/licence observations
 
@@ -230,7 +222,7 @@ The Stage 09 build is path-portable and reproducible, but a public hosted URL mu
 
 ## Completion boundary
 
-Stage 09 hardening functionality is verified. The final clean release candidate is explicitly identified above.
+Stage 09 hardening functionality and its clean release candidate are verified.
 
 Stage 09 as a whole retains one unresolved external item until a hosted deployment can be created and smoke-tested: **deployment**.
 
