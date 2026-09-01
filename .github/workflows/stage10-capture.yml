@@ -1,0 +1,54 @@
+name: Stage 10 gallery capture
+on:
+  push:
+    branches: [stage10-submission]
+    paths:
+      - '.stage10-capture-trigger'
+permissions:
+  contents: write
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: stage10-submission
+      - name: Install dependencies and Chromium
+        run: |
+          npm ci --ignore-scripts
+          npx playwright install --with-deps chromium
+      - name: Reverify application and build
+        run: |
+          npm test
+          npm run build:web
+      - name: Start verified static preview
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx vite preview --host 127.0.0.1 --port 4173 > /tmp/host-stage10-vite.log 2>&1 &
+          echo $! > /tmp/host-stage10-vite.pid
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/host-stage10-vite.log
+          exit 1
+      - name: Capture real gallery states
+        env:
+          HOST_URL: http://127.0.0.1:4173
+        run: node submission/capture-stage10.mjs
+      - name: Validate capture set
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(find submission/screenshots -maxdepth 1 -type f -name '*.png' | wc -l)" -eq 7
+          file submission/screenshots/*.png
+      - name: Commit captured screenshots
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add submission/screenshots
+          git commit -m "Capture Stage 10 gallery screenshots"
+          git push origin HEAD:stage10-submission
