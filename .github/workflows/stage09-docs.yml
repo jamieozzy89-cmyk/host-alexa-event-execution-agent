@@ -14,7 +14,11 @@ jobs:
         with:
           ref: stage09-hardening
       - name: Apply Stage 09 handover and README update
-        run: python .stage09-docs.py
+        shell: bash
+        run: |
+          set -euo pipefail
+          python .stage09-docs.py
+          sed -i 's/hosted deployment still pending  $/hosted deployment still pending/' README.md
       - name: Enforce documentation-only boundary
         shell: bash
         run: |
