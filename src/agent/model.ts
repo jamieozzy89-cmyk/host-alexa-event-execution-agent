@@ -2,7 +2,7 @@ import type { Constraint } from "../domain/types.js";
 import type { HostIntentKind, HostIntentSlots, IntentContext, IntentInterpreter, InterpretedHostIntent, StructuredIntentModel } from "./types.js";
 
 const INTENTS: HostIntentKind[] = [
-  "create_event", "status", "next_action", "menu_options", "shopping", "products", "checkout", "prep",
+  "create_event", "status", "next_action", "menu_options", "choose_menu", "shopping", "products", "checkout", "prep",
   "history", "change", "mark_task_complete", "undo", "confirm", "cancel", "help", "unknown",
 ];
 
@@ -43,6 +43,7 @@ function parseSlots(value: unknown): HostIntentSlots {
   const startText = optionalString(value, "startText");
   const timezone = optionalString(value, "timezone");
   const taskId = optionalString(value, "taskId");
+  const menuIndex = optionalNumber(value, "menuIndex");
   if (name) slots.name = name;
   if (guestCount !== undefined && Number.isInteger(guestCount) && guestCount > 0) slots.guestCount = guestCount;
   if (guestDelta !== undefined && Number.isInteger(guestDelta) && guestDelta !== 0) slots.guestDelta = guestDelta;
@@ -51,6 +52,7 @@ function parseSlots(value: unknown): HostIntentSlots {
   if (startText) slots.startText = startText;
   if (timezone) slots.timezone = timezone;
   if (taskId) slots.taskId = taskId;
+  if (menuIndex !== undefined && Number.isInteger(menuIndex) && menuIndex >= 1) slots.menuIndex = menuIndex;
   if (Array.isArray(value.preferences)) {
     const preferences = value.preferences.filter((entry): entry is string => typeof entry === "string" && entry.trim().length > 0);
     if (preferences.length) slots.preferences = preferences;

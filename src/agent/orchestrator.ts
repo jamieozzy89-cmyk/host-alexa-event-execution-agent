@@ -131,6 +131,7 @@ export class HostAgentOrchestrator {
     return {
       hasEvent: Boolean(state.eventId),
       hasPendingConfirmation: Boolean(state.pending),
+      hasMenuOptions: Boolean(state.lastMenus?.length),
       ...(state.awaitingField ? { awaitingField: state.awaitingField } : {}),
     };
   }
@@ -180,6 +181,7 @@ export class HostAgentOrchestrator {
       case "status": return this.showStatus(state);
       case "next_action": return this.showNextAction(state);
       case "menu_options": return this.showMenus(state);
+      case "choose_menu": return this.chooseMenuFromText(state, text, intent.slots.menuIndex);
       case "shopping": return this.buildShopping(state);
       case "products": return this.prepareProducts(state);
       case "checkout": return this.requestCheckout(state);
@@ -359,12 +361,35 @@ export class HostAgentOrchestrator {
     const result = await this.runtime.execute({ name: "propose_menu", input: { eventId: state.eventId, maxOptions: 3 } }) as HostToolResult<ProposedMenusView>;
     if (!result.ok) return this.failure(result, state);
     state.lastMenus = result.data.menus;
+    const spokenOptions = result.data.menus.map((menu, index) => `Option ${index + 1}: ${menu.name}.`).join(" ");
     return reply({
       status: "ok",
-      speech: `I found ${result.data.menus.length} menu options that fit the confirmed guest requirements.`,
+      speech: `I found ${result.data.menus.length} menu options. ${spokenOptions} Say choose option one, two or three.`,
       eventId: state.eventId,
       cards: [menuCard(result.data.menus)],
       actions: result.data.menus.map((menu) => ({ type: "choose_menu", label: shorten(`Choose ${menu.name}`), menuId: menu.id })),
+    });
+  }
+
+  private async chooseMenuFromText(state: ConversationState, text: string, menuIndex?: number): Promise<AgentReply> {
+    const menus = state.lastMenus ?? [];
+    if (!menus.length) return this.showMenus(state);
+    if (menuIndex !== undefined) {
+      const menu = menus[menuIndex - 1];
+      if (menu) return this.requestMenuCommit(state, menu.id);
+    }
+    const lower = text.toLowerCase();
+    const matched = menus.find((menu) => {
+      const words = menu.name.toLowerCase().split(/\s+/).filter((word) => word.length > 4);
+      return words.some((word) => lower.includes(word));
+    });
+    if (matched) return this.requestMenuCommit(state, matched.id);
+    return reply({
+      status: "needs_input",
+      speech: `Which menu should I use? Say choose option ${menus.map((_, index) => index + 1).join(", ")}.`,
+      question: "Which menu should I use?",
+      eventId: state.eventId,
+      actions: menus.map((menu) => ({ type: "choose_menu", label: shorten(`Choose ${menu.name}`), menuId: menu.id })),
     });
   }
 
@@ -454,9 +479,17 @@ export class HostAgentOrchestrator {
 
   private async completeTaskFromText(state: ConversationState, text: string, explicitTaskId?: string): Promise<AgentReply> {
     if (explicitTaskId) return this.completeTask(state, explicitTaskId);
-    const ready = state.lastTasks?.filter((task) => task.status === "ready") ?? [];
-    if (ready.length === 1) return this.completeTask(state, ready[0]!.id);
     const lower = text.toLowerCase();
+    const status = await this.currentStatus(state);
+    if (!status) return this.noEvent();
+    if (!status.ok) return this.failure(status, state);
+
+    const authoritativeNext = status.data.nextAction;
+    if (authoritativeNext && /\b(?:done|finished|complete)\b/.test(lower)) {
+      return this.completeTask(state, authoritativeNext.id);
+    }
+
+    const ready = state.lastTasks?.filter((task) => task.status === "ready") ?? [];
     const matched = ready.find((task) => task.title.toLowerCase().split(/\s+/).filter((word) => word.length > 4).some((word) => lower.includes(word)));
     if (matched) return this.completeTask(state, matched.id);
     return reply({ status: "needs_input", speech: "Which prep task did you finish?", question: "Which prep task did you finish?", eventId: state.eventId, actions: ready.slice(0, 4).map((task) => ({ type: "complete_task", label: shorten(task.title), taskId: task.id })) });

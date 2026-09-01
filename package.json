@@ -1,9 +1,9 @@
 {
   "name": "host-alexa-event-execution-agent",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "private": false,
   "type": "module",
-  "description": "Touch-first simulated Alexa+ hosting execution experience backed by controlled authoritative state.",
+  "description": "Voice-and-touch simulated Alexa+ hosting execution experience backed by controlled authoritative state.",
   "exports": {
     ".": {
       "types": "./dist/src/application/index.d.ts",
@@ -19,7 +19,8 @@
     "build:web": "npm run typecheck:web && vite build",
     "test:web": "playwright test",
     "verify": "npm test",
-    "verify:stage06": "npm test && npm run build:web && npm run test:web"
+    "verify:stage06": "npm test && npm run build:web && npm run test:web",
+    "verify:stage07": "npm test && npm run build:web && npm run test:web"
   },
   "engines": {
     "node": ">=22"

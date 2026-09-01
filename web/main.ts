@@ -2,6 +2,7 @@ import "./styles.css";
 import type { AgentAction, AgentCard, AgentReply } from "../src/application/index.js";
 import { render, type UiHandlers } from "./render.js";
 import { createBrowserHostRuntime } from "./runtime.js";
+import { createBrowserVoiceController } from "./voice.js";
 import type { HostUiState, ViewMode } from "./types.js";
 
 const appRoot = document.querySelector<HTMLElement>("#app");
@@ -18,7 +19,22 @@ const state: HostUiState = {
   latest: {},
   mode: "conversation",
   busy: false,
+  voice: {
+    supported: false,
+    active: false,
+    status: "unavailable",
+    message: "Voice is loading.",
+  },
 };
+
+const voice = createBrowserVoiceController({
+  onTranscript: (text) => { void submitVoice(text); },
+  onState: (next) => {
+    state.voice = next;
+    renderNow();
+  },
+});
+state.voice = voice.snapshot();
 
 function nextTranscriptId(): string {
   transcriptCounter += 1;
@@ -94,6 +110,32 @@ async function submit(text: string): Promise<void> {
   });
 }
 
+async function submitVoice(text: string): Promise<void> {
+  await guarded(async () => {
+    state.mode = "conversation";
+    state.transcript.push({ id: nextTranscriptId(), role: "user", text });
+    renderNow();
+    const reply = await runtime.agent.handleText(conversationId, text);
+    applyReply(reply);
+    await voice.speak(reply.speech);
+  });
+  if (voice.snapshot().active) voice.listen();
+}
+
+async function startVoice(): Promise<void> {
+  if (state.busy || !state.voice.supported || state.voice.active) return;
+  voice.activate();
+  const intro = runtime.activeEventId()
+    ? "Voice mode on. Ask for status, what is next, shopping, prep, history, or tell me what changed."
+    : "Voice mode on. Tell me what you are hosting, when it is, how many people are coming and your budget.";
+  await voice.speak(intro);
+  if (voice.snapshot().active) voice.listen();
+}
+
+function stopVoice(): void {
+  voice.deactivate();
+}
+
 async function performAction(action: AgentAction): Promise<void> {
   await guarded(async () => {
     const first = await runtime.agent.handleAction(conversationId, action);
@@ -145,6 +187,8 @@ const handlers: UiHandlers = {
   action: performAction,
   mode: switchMode,
   toggleTheme,
+  startVoice,
+  stopVoice,
   expand: (card) => { state.expandedCard = card; renderNow(); },
   closeExpanded: () => { delete state.expandedCard; renderNow(); },
 };
@@ -179,5 +223,7 @@ async function initialise(): Promise<void> {
     renderNow();
   }
 }
+
+window.addEventListener("beforeunload", () => voice.destroy());
 
 void initialise();

@@ -6,6 +6,8 @@ export interface UiHandlers {
   action(action: AgentAction): Promise<void>;
   mode(mode: ViewMode): Promise<void>;
   toggleTheme(): void;
+  startVoice(): Promise<void>;
+  stopVoice(): void;
   expand(card: AgentCard): void;
   closeExpanded(): void;
 }
@@ -445,10 +447,30 @@ function renderHeader(state: HostUiState, handlers: UiHandlers): HTMLElement {
     nav.append(control);
   }
 
+  const controls = el("div", "header-actions");
+  const voiceLabel = !state.voice.supported
+    ? "Voice unavailable"
+    : state.voice.active
+      ? state.voice.status === "listening" ? "Listening…" : state.voice.status === "speaking" ? "Speaking…" : "Voice on"
+      : "Voice";
+  const voice = button(voiceLabel, state.voice.active ? "voice-button active" : "voice-button");
+  voice.disabled = state.busy || !state.voice.supported;
+  voice.setAttribute("aria-label", state.voice.active ? "Stop voice" : state.voice.supported ? "Start voice" : "Voice unavailable");
+  voice.setAttribute("aria-pressed", state.voice.active ? "true" : "false");
+  voice.dataset.voiceStatus = state.voice.status;
+  voice.addEventListener("click", () => {
+    if (state.voice.active) handlers.stopVoice();
+    else void handlers.startVoice();
+  });
+  const voiceState = el("span", "voice-state", state.voice.message);
+  voiceState.setAttribute("aria-live", "polite");
+  voiceState.setAttribute("role", "status");
+
   const theme = button("Theme", "icon-button");
   theme.setAttribute("aria-label", "Switch light or dark theme");
   theme.addEventListener("click", handlers.toggleTheme);
-  header.append(brand, nav, theme);
+  controls.append(voice, voiceState, theme);
+  header.append(brand, nav, controls);
   return header;
 }
 
