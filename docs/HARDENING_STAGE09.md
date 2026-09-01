@@ -195,16 +195,16 @@ Stage 09 intentionally failed closed several times before acceptance:
 
 Those issues were corrected and the full relevant gates rerun rather than waived.
 
-Final verified functional hardening evidence before the portable-base requalification:
+Verified final functional evidence:
 
 - backend/application tests: **74 passed, 0 failed**;
 - production web build: passed;
 - complete browser suite: **26 passed, 0 failed**;
-- Axe WCAG A/AA test surfaces: passed;
+- Axe WCAG A/AA representative surfaces: passed;
 - production dependency audit: zero vulnerabilities;
 - injection/direct-domain boundary scans: passed.
 
-The portable static-base change is separately requalified through the same full Stage 09 gate before release.
+Permanent verification evidence is in `reports/STAGE09_VERIFICATION.md`.
 
 ## Current competition recheck
 
@@ -226,8 +226,6 @@ Open Source remains selected. AWS Builder remains deliberately deferred for now 
 
 The release is **deployment-ready but not yet truthfully hosted** from this environment.
 
-Two deployment routes were investigated:
-
 ### Vercel
 
 The user connected Vercel. The connected deployment backend requires a target, project name and file tree, but the available chat tool schema currently exposes none of those arguments. The wrapper therefore cannot receive the exact verified artifact set through this chat surface.
@@ -244,11 +242,4 @@ The inability to publish a hosted URL is an external deployment-control limitati
 
 ## Stage 09 release boundary
 
-Stage 09 hardening code may be released after:
-
-1. portable-base full requalification passes;
-2. permanent verification report and handover are updated;
-3. temporary Stage 09 workflow/scripts/triggers are excluded from the clean release tree;
-4. the exact clean release tree is independently checked.
-
-Hosted deployment remains a separately unresolved Stage 09 item until a deployment tool/credential path capable of receiving the exact verified artifact is available.
+Stage 09 hardening functionality and the clean product/test release have been independently verified. Hosted deployment remains separately unresolved until a working hosting-control path is available and smoke-tested.
