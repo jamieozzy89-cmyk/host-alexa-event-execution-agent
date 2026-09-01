@@ -58,17 +58,10 @@ jobs:
         run: |
           npm install --ignore-scripts
           npx playwright install --with-deps chromium
-      - name: Verify full Stage 06 candidate
+      - name: Verify backend and web build
         run: |
           npm test
           npm run build:web
-          npm run test:web
-      - name: Check UI boundary
-        shell: bash
-        run: |
-          set -euo pipefail
-          ! grep -RInE 'HostDomainEngine|validateHostState' web
-          ! grep -RInE 'TODO|FIXME|HACK' web tests/web
       - name: Verify corrected blob identities
         shell: bash
         run: |
@@ -76,12 +69,31 @@ jobs:
           test "$(git hash-object web/render.ts)" = "344d2b2b93c42458858e813dea26640e80c7bcc3"
           test "$(git hash-object web/styles.css)" = "b8f7015a4fa1ee896c64bb9b8cbc39ddb8c48b57"
           test "$(git hash-object tests/web/host-ui.spec.ts)" = "03a3ba64f2064ec8580887db6146e73169d6c76f"
-      - name: Commit verified browser fixes
+      - name: Run browser acceptance and preserve output
+        id: browser
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run test:web 2>&1 | tee reports/STAGE06_BROWSER_LAST_RUN.txt
+      - name: Check UI boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! grep -RInE 'HostDomainEngine|validateHostState' web
+          ! grep -RInE 'TODO|FIXME|HACK' web tests/web
+      - name: Commit isolated corrected candidate and diagnostic
+        if: always()
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add web/render.ts web/styles.css tests/web/host-ui.spec.ts package-lock.json
-          git commit -m "Fix Stage 06 live guidance and reload verification"
-          git push origin HEAD:stage06-ui
+          git add web/render.ts web/styles.css tests/web/host-ui.spec.ts package-lock.json reports/STAGE06_BROWSER_LAST_RUN.txt
+          if ! git diff --cached --quiet; then
+            git commit -m "Record corrected Stage 06 browser candidate"
+            git push origin HEAD:stage06-ui
+          fi
+      - name: Enforce browser acceptance gate
+        if: steps.browser.outcome == 'failure'
+        run: exit 1
