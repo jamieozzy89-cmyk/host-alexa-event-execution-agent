@@ -165,14 +165,14 @@ export function createBrowserVoiceController(callbacks: VoiceControllerCallbacks
         }
         if (event.error === "aborted") return;
         if (event.error === "not-allowed" || event.error === "service-not-allowed") {
-          fail("Microphone permission was denied. Voice mode is off.");
+          fail("Microphone permission was denied. Voice mode is off. Touch controls still work.");
           return;
         }
         if (event.error === "audio-capture") {
-          fail("No microphone is available. Voice mode is off.");
+          fail("No microphone is available. Voice mode is off. Touch controls still work.");
           return;
         }
-        fail(`Voice recognition failed (${event.error}). Voice mode is off.`);
+        fail("Voice recognition failed. Voice mode is off. Touch controls still work.");
       };
       instance.onend = () => {
         if (recognition === instance) recognition = undefined;
@@ -186,7 +186,7 @@ export function createBrowserVoiceController(callbacks: VoiceControllerCallbacks
         instance.start();
       } catch {
         recognition = undefined;
-        fail("Voice recognition could not start. Voice mode is off.");
+        fail("Voice recognition could not start. Voice mode is off. Touch controls still work.");
       }
     },
 
@@ -203,7 +203,7 @@ export function createBrowserVoiceController(callbacks: VoiceControllerCallbacks
           resolve();
         };
         utterance.onerror = () => {
-          fail("Speech output failed. Voice mode is off.");
+          fail("Speech output failed. Voice mode is off. Touch controls still work.");
           resolve();
         };
         publish({ status: "speaking", message: "Host is speaking…", lastSpoken: text });
