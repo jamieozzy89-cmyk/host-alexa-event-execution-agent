@@ -1,0 +1,57 @@
+name: Stage 09 reproducibility verification
+on:
+  push:
+    branches: [stage09-hardening]
+    paths:
+      - '.stage09-repro-trigger'
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: stage09-hardening
+      - name: Correct package and lock metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm pkg set engines.node='>=22.12.0'
+          npm install --package-lock-only --ignore-scripts
+          node - <<'NODE'
+          const fs = require('fs');
+          const pkg = JSON.parse(fs.readFileSync('package.json','utf8'));
+          const lock = JSON.parse(fs.readFileSync('package-lock.json','utf8'));
+          if (pkg.version !== '0.9.0') throw new Error(`package version ${pkg.version}`);
+          if (lock.version !== '0.9.0') throw new Error(`lock version ${lock.version}`);
+          if (lock.packages?.['']?.version !== '0.9.0') throw new Error(`lock root version ${lock.packages?.['']?.version}`);
+          if (pkg.engines?.node !== '>=22.12.0') throw new Error(`node engine ${pkg.engines?.node}`);
+          NODE
+          git diff --check
+      - name: Install dependencies and Chromium
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: Verify full Stage 09 product
+        run: |
+          npm test
+          npm run build:web
+          npm run test:web
+      - name: Verify security boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm audit --omit=dev
+          ! grep -RInE '\.innerHTML|insertAdjacentHTML|document\.write' web
+          ! grep -RInE 'HostDomainEngine|validateHostState' web
+          ! grep -RInE 'from "\.\./src/domain|from "\.\./src/persistence|from "\.\./src/tools' web
+      - name: Commit corrected reproducibility metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          git commit -m "Correct Stage 09 reproducibility metadata"
+          git push origin HEAD:stage09-hardening
