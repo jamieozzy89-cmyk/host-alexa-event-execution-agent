@@ -1,0 +1,56 @@
+name: Stage 10 demo source recording
+on:
+  push:
+    branches: [stage10-submission]
+    paths:
+      - '.stage10-demo-trigger'
+permissions:
+  contents: read
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: stage10-submission
+      - name: Install dependencies and Chromium
+        run: |
+          npm ci --ignore-scripts
+          npx playwright install --with-deps chromium
+      - name: Reverify application and build
+        run: |
+          npm test
+          npm run build:web
+      - name: Start verified static preview
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx vite preview --host 127.0.0.1 --port 4173 > /tmp/host-stage10-demo-vite.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/host-stage10-demo-vite.log
+          exit 1
+      - name: Record uninterrupted working source run
+        env:
+          HOST_URL: http://127.0.0.1:4173
+        run: node submission/record-stage10-source.mjs
+      - name: Validate source recording
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s submission/video-source/host-stage10-uninterrupted-source.webm
+          test -s submission/video-source/SOURCE_RUN_MANIFEST.txt
+          file submission/video-source/host-stage10-uninterrupted-source.webm
+          cat submission/video-source/SOURCE_RUN_MANIFEST.txt
+          if command -v ffprobe >/dev/null 2>&1; then
+            ffprobe -v error -show_entries format=duration,size -of default=noprint_wrappers=1 submission/video-source/host-stage10-uninterrupted-source.webm | tee submission/video-source/FFPROBE.txt
+          fi
+      - name: Upload source-run artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: host-stage10-demo-source-run
+          path: submission/video-source/
+          if-no-files-found: error
+          retention-days: 30
