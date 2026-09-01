@@ -36,7 +36,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if ! git diff --quiet -- reports/STAGE06_BROWSER_LAST_RUN.txt; then
+          if [ -n "$(git status --porcelain -- reports/STAGE06_BROWSER_LAST_RUN.txt)" ]; then
             git add reports/STAGE06_BROWSER_LAST_RUN.txt
             git commit -m "Record Stage 06 browser verification diagnostic"
             git push origin HEAD:stage06-ui
