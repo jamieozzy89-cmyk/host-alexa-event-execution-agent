@@ -13,17 +13,17 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: stage08-competition-integration
-      - name: Apply tested Stage 08 documentation transformation
-        run: python .stage08-update-docs.py
+      - name: Apply Stage 08 AWS deferral decision
+        run: python .stage08-defer-aws.py
       - name: Enforce documentation-only change boundary
         shell: bash
         run: |
           set -euo pipefail
           changed="$(git diff --name-only | sort)"
           printf '%s\n' "$changed"
-          test "$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l)" -eq 2
-          test "$(printf '%s\n' "$changed" | grep -Ec '^(HANDOVER\.md|README\.md)$')" -eq 2
-          test -z "$(printf '%s\n' "$changed" | grep -Ev '^(HANDOVER\.md|README\.md)$' || true)"
+          test "$(printf '%s\n' "$changed" | sed '/^$/d' | wc -l)" -eq 3
+          test "$(printf '%s\n' "$changed" | grep -Ec '^(HANDOVER\.md|README\.md|docs/COMPETITION_INTEGRATION_STAGE08\.md)$')" -eq 3
+          test -z "$(printf '%s\n' "$changed" | grep -Ev '^(HANDOVER\.md|README\.md|docs/COMPETITION_INTEGRATION_STAGE08\.md)$' || true)"
           git diff --check
       - name: Commit controlled documentation update
         shell: bash
@@ -31,6 +31,6 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add README.md HANDOVER.md
-          git commit -m "Record Stage 08 decisions in handover"
+          git add README.md HANDOVER.md docs/COMPETITION_INTEGRATION_STAGE08.md
+          git commit -m "Record deferred AWS Builder decision"
           git push origin HEAD:stage08-competition-integration
