@@ -90,7 +90,7 @@ function cardShell(title: string, eyebrow?: string): HTMLElement {
 }
 
 function renderEvent(card: Extract<AgentCard, { type: "event_summary" }>): HTMLElement {
-  const wrap = cardShell(card.title, "Tonight at a glance");
+  const wrap = cardShell(card.title, "Current plan");
   wrap.classList.add("event-card");
   const grid = el("dl", "summary-grid");
   const fields: Array<[string, string]> = [
@@ -392,7 +392,7 @@ function renderPlan(state: HostUiState, handlers: UiHandlers): HTMLElement {
   return main;
 }
 
-function renderLive(state: HostUiState, handlers: UiHandlers): HTMLElement {
+function renderLive(state: HostUiState, handlers: UiHandlers): HTMKElement {
   const view = el("section", "mode-view live-view");
   const reply = state.liveReply ?? latestReply(state);
   const prep = reply?.cards.find((card): card is Extract<AgentCard, { type: "prep_timeline" }> => card.type === "prep_timeline");
@@ -414,7 +414,7 @@ function renderLive(state: HostUiState, handlers: UiHandlers): HTMLElement {
   return view;
 }
 
-function renderPrivacy(state: HostUiState, handlers: UiHandlers): HTMLElement {
+function renderPrivacy(state: HostUiState, handlers: UiHandlers): HTMKElement {
   const wrap = cardShell("Data & privacy", "Current demo behavior");
   wrap.classList.add("privacy-card");
   wrap.append(el("p", "privacy-copy", "Host stores event details in this browser only. This current build does not send plan data to a Host application server."));
@@ -452,7 +452,7 @@ function renderPrivacy(state: HostUiState, handlers: UiHandlers): HTMLElement {
   return wrap;
 }
 
-function renderActivity(state: HostUiState, handlers: UiHandlers): HTMLElement {
+function renderActivity(state: HostUiState, handlers: UiHandlers): HTMKElement {
   const view = el("section", "mode-view activity-view");
   const reply = latestReply(state);
   const history = reply?.cards.find((card): card is Extract<AgentCard, { type: "history" }> => card.type === "history") ?? state.latest.history;
