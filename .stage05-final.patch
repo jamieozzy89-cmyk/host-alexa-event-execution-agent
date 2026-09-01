@@ -1,0 +1,301 @@
+diff --git a/package.json b/package.json
+index 762ddf1..c7ba94a 100644
+--- a/package.json
++++ b/package.json
+@@ -1,9 +1,9 @@
+ {
+   "name": "host-alexa-event-execution-agent",
+-  "version": "0.4.0",
++  "version": "0.5.0",
+   "private": false,
+   "type": "module",
+-  "description": "Authoritative execution, persistence and intent-tool foundation for the Host Alexa+ hackathon simulation.",
++  "description": "Controlled conversational orchestration, tools, persistence and domain foundation for the Host Alexa+ hackathon simulation.",
+   "exports": {
+     ".": {
+       "types": "./dist/src/application/index.d.ts",
+@@ -19,5 +19,8 @@
+   "engines": {
+     "node": ">=22"
+   },
+-  "license": "MIT"
++  "license": "MIT",
++  "devDependencies": {
++    "typescript": "7.0.2"
++  }
+ }
+diff --git a/src/agent/date.ts b/src/agent/date.ts
+index ff68c66..4d147c9 100644
+--- a/src/agent/date.ts
++++ b/src/agent/date.ts
+@@ -35,11 +35,14 @@ function zonedToUtc(year: number, month: number, day: number, hour: number, minu
+ }
+ 
+ function parseTime(text: string): { hour: number; minute: number } {
+-  const match = text.match(/(?:\bat\s*)?\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\b/i);
++  const match = text.match(/(?:\bat\s*\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\b|\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b|\b(\d{1,2}):(\d{2})\b)/i);
+   if (!match) return { hour: 19, minute: 0 };
+-  let hour = Number(match[1]);
+-  const minute = match[2] ? Number(match[2]) : 0;
+-  const suffix = match[3]?.toLowerCase();
++  const hourText = match[1] ?? match[4] ?? match[7];
++  const minuteText = match[2] ?? match[5] ?? match[8];
++  const suffix = (match[3] ?? match[6])?.toLowerCase();
++  if (!hourText) return { hour: 19, minute: 0 };
++  let hour = Number(hourText);
++  const minute = minuteText ? Number(minuteText) : 0;
+   if (minute > 59 || hour > 23) return { hour: 19, minute: 0 };
+   if (suffix === "pm" && hour < 12) hour += 12;
+   if (suffix === "am" && hour === 12) hour = 0;
+diff --git a/src/agent/model.ts b/src/agent/model.ts
+index 83c5ab5..3f8662c 100644
+--- a/src/agent/model.ts
++++ b/src/agent/model.ts
+@@ -82,7 +82,10 @@ export class ResilientIntentInterpreter implements IntentInterpreter {
+ 
+   async interpret(text: string, context: IntentContext): Promise<InterpretedHostIntent> {
+     try {
+-      return await this.preferred.interpret(text, context);
++      const preferred = await this.preferred.interpret(text, context);
++      if (preferred.kind !== "unknown" && preferred.confidence >= 0.65) return preferred;
++      const fallback = await this.fallback.interpret(text, context);
++      return fallback.confidence > preferred.confidence ? fallback : preferred;
+     } catch {
+       return this.fallback.interpret(text, context);
+     }
+diff --git a/src/agent/orchestrator.ts b/src/agent/orchestrator.ts
+index b94fea8..af27a1f 100644
+--- a/src/agent/orchestrator.ts
++++ b/src/agent/orchestrator.ts
+@@ -4,8 +4,8 @@ import { HostToolRuntime } from "../tools/runtime.js";
+ import { parseNaturalStartAt } from "./date.js";
+ import { friendlyToolFailure } from "./friendly-errors.js";
+ import { HeuristicIntentInterpreter } from "./interpreter.js";
+-import { eventSummaryCard, historyCard, impactCard, menuCard, prepCard, productCard, shoppingCard } from "./presentation.js";
+-import type { AgentAction, AgentReply, ConversationState, EventDraft, HostAgentDependencies, IntentContext, IntentInterpreter, PendingConfirmation } from "./types.js";
++import { customerReceiptSummary, eventSummaryCard, historyCard, impactCard, menuCard, prepCard, productCard, shoppingCard } from "./presentation.js";
++import type { AgentAction, AgentReply, ConversationState, EventDraft, HostAgentDependencies, HostIntentSlots, IntentContext, IntentInterpreter, PendingConfirmation } from "./types.js";
+ 
+ function shorten(value: string, max = 34): string {
+   return value.length <= max ? value : `${value.slice(0, max - 1)}…`;
+@@ -19,8 +19,8 @@ function reply(params: {
+   displayText?: string;
+   cards?: AgentReply["cards"];
+   actions?: AgentAction[];
+-  eventId?: string;
+-  question?: string;
++  eventId?: string | undefined;
++  question?: string | undefined;
+ }): AgentReply {
+   return {
+     status: params.status,
+@@ -94,6 +94,31 @@ export class HostAgentOrchestrator {
+     return structuredClone(this.state(conversationId));
+   }
+ 
++  async resumeConversation(conversationId: string, eventId: string): Promise<AgentReply> {
++    const state = this.state(conversationId);
++    const result = await this.runtime.execute({ name: "get_event_status", input: { eventId } }) as HostToolResult<EventStatusView>;
++    if (!result.ok) return this.failure(result, state);
++    state.eventId = eventId;
++    state.draft = undefined;
++    state.awaitingField = undefined;
++    state.pending = undefined;
++    delete state.lastMenus;
++    delete state.lastShopping;
++    delete state.lastTasks;
++    delete state.lastReceipts;
++    delete state.lastAudit;
++    return reply({
++      status: "ok",
++      speech: `Welcome back. ${result.data.event.name} is restored and ready to continue.`,
++      eventId,
++      cards: [eventCardFromStatus(result.data)],
++      actions: [
++        { type: "request", label: "Check status", request: "status" },
++        { type: "request", label: "What's next", request: "next" },
++      ],
++    });
++  }
++
+   private state(conversationId: string): ConversationState {
+     const existing = this.conversations.get(conversationId);
+     if (existing) return existing;
+@@ -197,7 +222,7 @@ export class HostAgentOrchestrator {
+     }
+   }
+ 
+-  private async startEvent(state: ConversationState, slots: Parameters<IntentInterpreter["interpret"]> extends never ? never : import("./types.js").HostIntentSlots): Promise<AgentReply> {
++  private async startEvent(state: ConversationState, slots: HostIntentSlots): Promise<AgentReply> {
+     const draft: EventDraft = state.draft ?? {
+       currency: slots.currency ?? this.defaultCurrency,
+       timezone: slots.timezone ?? this.defaultTimezone,
+@@ -462,7 +487,7 @@ export class HostAgentOrchestrator {
+     const last = result.data.receipts.at(-1);
+     return reply({
+       status: "ok",
+-      speech: last ? `The latest recorded action is ${last.resultSummary}` : "There isn't any recorded action history yet.",
++      speech: last ? `Latest: ${customerReceiptSummary(last)}` : "There isn't any recorded action history yet.",
+       eventId: state.eventId,
+       cards: [historyCard(result.data.receipts, result.data.audit)],
+       actions: result.data.reversibleReceiptIds.length ? [{ type: "request", label: "Undo latest safe change", request: "undo" }] : [],
+@@ -489,7 +514,7 @@ export class HostAgentOrchestrator {
+     return confirmationReply(state, state.pending);
+   }
+ 
+-  private async previewChange(state: ConversationState, slots: import("./types.js").HostIntentSlots): Promise<AgentReply> {
++  private async previewChange(state: ConversationState, slots: HostIntentSlots): Promise<AgentReply> {
+     const status = await this.currentStatus(state);
+     if (!status) return this.noEvent();
+     if (!status.ok) return this.failure(status, state);
+diff --git a/src/agent/presentation.ts b/src/agent/presentation.ts
+index 88aba42..0b498a3 100644
+--- a/src/agent/presentation.ts
++++ b/src/agent/presentation.ts
+@@ -71,14 +71,14 @@ export function historyCard(receipts: ActionReceipt[], audit: AuditEvent[]): His
+       id: receipt.id,
+       action: humanAction(receipt.actionType),
+       status: receipt.status,
+-      summary: receipt.resultSummary,
++      summary: customerReceiptSummary(receipt),
+       reversible: receipt.reversible,
+     })),
+     audit: audit.map((event) => ({
+       id: event.id,
+       action: humanAction(event.action),
+       result: event.result,
+-      delta: event.delta,
++      delta: event.result === "failed" ? `${humanAction(event.action)} did not complete.` : event.delta,
+       beforeRevision: event.beforeRevision,
+       afterRevision: event.afterRevision,
+     })),
+@@ -125,6 +125,17 @@ export function impactCard(impact: {
+   };
+ }
+ 
++export function customerReceiptSummary(receipt: ActionReceipt): string {
++  const action = humanAction(receipt.actionType);
++  if (receipt.status === "failed") {
++    if (receipt.actionType === "confirm_cart_action") return "Simulated checkout failed; nothing was marked as purchased.";
++    return `${action} did not complete.`;
++  }
++  if (receipt.status === "reversed") return `${action} was reversed.`;
++  if (receipt.status === "pending") return `${action} is waiting for confirmation.`;
++  return `${action} completed.`;
++}
++
+ export function humanAction(action: string): string {
+   return action.replace(/^undo:/, "Undo ").replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+ }
+diff --git a/src/agent/types.ts b/src/agent/types.ts
+index 0a141c9..2d823e1 100644
+--- a/src/agent/types.ts
++++ b/src/agent/types.ts
+@@ -149,12 +149,12 @@ export interface HostAgentDependencies {
+ }
+ 
+ export interface EventDraft {
+-  name?: string;
+-  guestCount?: number;
+-  budget?: number;
++  name?: string | undefined;
++  guestCount?: number | undefined;
++  budget?: number | undefined;
+   currency: string;
+   timezone: string;
+-  startAt?: string;
++  startAt?: string | undefined;
+   constraints: Constraint[];
+   preferences: string[];
+ }
+@@ -168,10 +168,10 @@ export interface PendingConfirmation {
+ }
+ 
+ export interface ConversationState {
+-  eventId?: string;
+-  draft?: EventDraft;
+-  awaitingField?: "guestCount" | "startAt" | "budget";
+-  pending?: PendingConfirmation;
++  eventId?: string | undefined;
++  draft?: EventDraft | undefined;
++  awaitingField?: "guestCount" | "startAt" | "budget" | undefined;
++  pending?: PendingConfirmation | undefined;
+   lastMenus?: Menu[];
+   lastShopping?: ShoppingItem[];
+   lastTasks?: PreparationTask[];
+diff --git a/tests/agent-fixtures.mjs b/tests/agent-fixtures.mjs
+index 6b94efd..7d18251 100644
+--- a/tests/agent-fixtures.mjs
++++ b/tests/agent-fixtures.mjs
+@@ -11,8 +11,8 @@ import { HostAgentOrchestrator } from "../dist/src/agent/orchestrator.js";
+ import { HeuristicIntentInterpreter } from "../dist/src/agent/interpreter.js";
+ 
+ export function makeAgent(options = {}) {
+-  const storage = new MemoryStorage();
+-  const persistence = new JsonStoragePersistenceAdapter(storage);
++  const storage = options.storage ?? new MemoryStorage();
++  const persistence = options.persistence ?? new JsonStoragePersistenceAdapter(storage);
+   const cart = options.cart ?? new DeterministicSimulatedCartAdapter();
+   const runtime = new HostToolRuntime(persistence, {
+     menuProposals: createDefaultMenuProposalAdapter(),
+diff --git a/tests/agent-orchestrator.test.mjs b/tests/agent-orchestrator.test.mjs
+index 27265e6..1e328df 100644
+--- a/tests/agent-orchestrator.test.mjs
++++ b/tests/agent-orchestrator.test.mjs
+@@ -250,3 +250,56 @@ test("resilient interpreter falls back deterministically when a model interprete
+   assert.equal(result.status, "ok");
+   assert.equal(result.cards[0]?.guestCount, 6);
+ });
++
++test("package root exposes the Stage 05 agent without exposing the domain engine", async () => {
++  const api = await import("host-alexa-event-execution-agent");
++  assert.equal(typeof api.HostAgentOrchestrator, "function");
++  assert.equal(typeof api.HeuristicIntentInterpreter, "function");
++  assert.equal(typeof api.ResilientIntentInterpreter, "function");
++  assert.equal("HostDomainEngine" in api, false);
++});
++
++test("guest-count numbers are never interpreted as event clock times", async () => {
++  const { agent } = makeAgent();
++  const result = await agent.handleText("numeric-time", "I'm hosting dinner for 6 people on Saturday with a £120 budget");
++  assert.equal(result.status, "ok");
++  assert.equal(result.cards[0]?.startAt, "2026-09-05T18:00:00.000Z");
++});
++
++test("low-confidence model guesses fall back to the stronger deterministic interpretation", async () => {
++  const weakModel = { async infer() { return { kind: "undo", confidence: 0.2, slots: {} }; } };
++  const interpreter = new ResilientIntentInterpreter(new ModelBackedIntentInterpreter(weakModel), new HeuristicIntentInterpreter());
++  const { agent } = makeAgent({ interpreter });
++  const result = await createEvent(agent, "weak-model");
++  assert.equal(result.status, "ok");
++  assert.equal(result.cards[0]?.guestCount, 6);
++});
++
++test("a fresh agent can safely resume persisted event state without restoring stale confirmation state", async () => {
++  const first = makeAgent();
++  await createEvent(first.agent, "before-reload");
++  await chooseFirstMenu(first.agent, "before-reload");
++  const second = makeAgent({ persistence: first.persistence, eventId: "agent-dinner" });
++  const beforeResume = await second.agent.handleText("after-reload", "status");
++  assert.equal(beforeResume.status, "needs_input");
++  const resumed = await second.agent.resumeConversation("after-reload", "agent-dinner");
++  assert.equal(resumed.status, "ok");
++  assert.equal(resumed.cards[0]?.type, "event_summary");
++  assert.ok(resumed.cards[0]?.revision >= 2);
++  assert.equal(second.agent.getConversationState("after-reload").pending, undefined);
++  const status = await second.agent.handleText("after-reload", "status");
++  assert.equal(status.status, "ok");
++});
++
++test("failed checkout history stays customer-safe and does not expose provider internals", async () => {
++  const cart = new DeterministicSimulatedCartAdapter();
++  const { agent } = makeAgent({ cart });
++  await prepareShopping(agent, "safe-history");
++  cart.failNext("SIMULATED_CHECKOUT_ADAPTER_ERROR", "adapter stack provider secret-ish detail");
++  await agent.handleText("safe-history", "checkout");
++  await agent.handleText("safe-history", "yes");
++  const history = await agent.handleText("safe-history", "history");
++  const visible = JSON.stringify({ speech: history.speech, cards: history.cards });
++  assert.doesNotMatch(visible, /adapter stack|provider secret|schema|idempotency/i);
++  assert.match(visible, /nothing was marked as purchased|did not complete/i);
++});
