@@ -27,6 +27,7 @@ export interface HostUiState {
   busy: boolean;
   expandedCard?: AgentCard;
   liveReply?: AgentReply;
+  activityReply?: AgentReply;
 }
 
 export type ActionHandler = (action: AgentAction) => Promise<void>;
