@@ -147,6 +147,13 @@ Interaction rules enforced by the application/tests include:
 - preserve equivalent controlled routes across voice and touch where the current journey exposes them;
 - explicitly retain touch/keyboard fallback if browser voice fails or is unavailable.
 
+## Competition mini-challenge status
+
+- **Open Source:** selected for entry. Host is a new public MIT repository with substantive implementation and tests. Submission evidence is prepared in `submission/OPEN_SOURCE_MINI_EVIDENCE.md`.
+- **AWS Builder:** not currently claimed. The user has an AWS account, but has chosen to defer connecting it for now. Bedrock + AgentCore Memory remains the selected future AWS architecture; no AWS runtime integration has yet been implemented or verified.
+
+See `docs/COMPETITION_INTEGRATION_STAGE08.md` for the controlled decision and AWS integration boundary.
+
 ## Runtime/model boundary
 
 The verified default runtime uses `HeuristicIntentInterpreter` behind `HostAgentOrchestrator`. This gives a reproducible local path and keeps the product usable without a live external model.

@@ -6,7 +6,8 @@
 **Competition:** Build, Ship, Shape: Amazon Developer Hackathon 2026  
 **Primary track:** Alexa+ — simulated Alexa+ web experience  
 **Current accepted product stage:** Stage 07 — voice + touch interaction  
-**Next controlled stage:** Stage 08 — competition integration decision
+**Current competition decision stage:** Stage 08 — Open Source locked; AWS Builder deliberately deferred for now
+**Next executable product stage:** Stage 09 — hardening
 
 This handover travels with the full repository source. It records the governing product design, verified stage history, current boundaries, test evidence, unresolved work, and exact continuation point required to continue without relying on chat memory.
 
@@ -260,6 +261,67 @@ Voice scenarios:
 
 See `docs/VOICE_INTERACTION_STAGE07.md` and `reports/STAGE07_VERIFICATION.md`.
 
+## Stage 08 — competition integration decision
+
+Stage 08 has now been researched against the current Devpost rules and current AWS documentation. It does not change the verified Stage 07 runtime.
+
+### Open Source mini challenge — locked decision
+
+**Enter the Open Source mini challenge.**
+
+Verified evidence:
+
+- public repository: `https://github.com/jamieozzy89-cmyk/host-alexa-event-execution-agent`;
+- GitHub username: `jamieozzy89-cmyk`;
+- MIT licence;
+- repository created 1 September 2026 at 02:23:58 UTC;
+- clean Stage 07 contribution/release commit: `871ae74bf53461a02201554250f68b22c5382fc9`;
+- contribution URL: `https://github.com/jamieozzy89-cmyk/host-alexa-event-execution-agent/commit/871ae74bf53461a02201554250f68b22c5382fc9`;
+- substantive implementation includes domain engine, persistence, 17 validated tools, agent/orchestrator, touch UI, browser voice, receipts/audit, tests and technical documentation.
+
+Prepared submission evidence is stored in `submission/OPEN_SOURCE_MINI_EVIDENCE.md`.
+
+### AWS Builder — conditional decision
+
+AWS is **not required** for Host's valid simulated Alexa+ primary-track route.
+
+The competition's AWS Builder examples explicitly distinguish obvious integrations such as a single Bedrock generation call from more creative multi-service/agentic architectures. Therefore Host must not add a token Bedrock call merely to qualify.
+
+Options evaluated:
+
+- single Bedrock text-generation call — rejected as shallow/padding;
+- replace Host orchestration with Strands — rejected because it risks weakening the verified authoritative execution boundary;
+- convert the current web simulation to AgentCore Gateway/MCP solely for the mini challenge — rejected as unnecessary architecture/infrastructure churn;
+- **Bedrock + AgentCore Memory — selected as the only AWS architecture worth pursuing if real AWS access is supplied.**
+
+#### Controlled Bedrock role
+
+Bedrock would sit behind Host's existing `StructuredIntentModel` / `ModelBackedIntentInterpreter` interface, preferably through the Bedrock Converse API. Model output still terminates at the existing orchestrator/tool/domain path and cannot directly mutate authoritative state. `ResilientIntentInterpreter` must retain the deterministic fallback.
+
+#### Controlled AgentCore Memory role
+
+AgentCore Memory would hold **non-authoritative cross-event preferences** only, such as cuisine/style or normal prep preferences. Retrieved memory may suggest context; it must never silently become a confirmed dietary/allergen constraint, completion state, committed menu, transaction or other authoritative event fact.
+
+#### AWS access / current decision
+
+The user has confirmed that an AWS account exists. However, the current project environment still has no governed AWS connection or AWS/Bedrock plugin, and the user has explicitly chosen to continue without connecting AWS for now. Therefore the Bedrock + AgentCore Memory implementation is deliberately deferred rather than abandoned.
+
+Therefore:
+
+- no AWS service is currently implemented or claimed;
+- no mocked AWS integration may be substituted for a real competition claim;
+- `Built With` must not list Bedrock/AgentCore until real calls are implemented and verified.
+
+The competition rules currently offer up to $150 promotional AWS credits while supplies last, with additional charges remaining the entrant's responsibility. If AWS access is supplied, request/confirm credits and set a strict spend budget before implementation.
+
+Full Stage 08 decision/evidence: `docs/COMPETITION_INTEGRATION_STAGE08.md`.
+
+### Exact continuation after Stage 08
+
+If the user later chooses to connect AWS securely to the project environment, implement Bedrock + AgentCore Memory behind the controlled adapters and rerun all existing plus AWS-specific tests before claiming AWS Builder.
+
+For now, Stage 08 is complete as a controlled decision: retain the verified Stage 07 Alexa+ product, enter Open Source, do **not** claim AWS Builder yet, and proceed directly to Stage 09 hardening.
+
 ## Current simulation and capability boundaries
 
 The following are simulations and must continue to be described truthfully:
@@ -338,35 +400,9 @@ Run the full Stage 07 verification sequence after browser dependencies are insta
 npm run verify:stage07
 ```
 
-## Exact continuation point — Stage 08
+## Exact continuation point
 
-Stage 07 is complete only after the clean release tree is independently reverified and published to `main`. After publication, Stage 08 is a competition-integration decision rather than an automatic feature-addition stage.
-
-### Primary question
-
-Determine whether a real AWS Builder mini-challenge integration adds enough customer/judging value to justify its complexity while preserving Host's primary Alexa+ product quality.
-
-The decision must be based on current official competition/AWS sources and actual available access, not assumptions.
-
-### Required Stage 08 evaluation
-
-1. Re-read/verify the current AWS Builder mini-challenge requirements from the controlling competition page/current official sources.
-2. Identify candidate AWS integrations that improve Host itself rather than merely qualifying for a prize.
-3. Check current availability, account/access requirements, pricing/cost exposure, and implementation constraints before selecting anything.
-4. Compare each candidate against doing nothing: product value, technical evidence, demo clarity, reliability, privacy/security, development cost, and risk to the primary Alexa+ entry.
-5. Decide explicitly:
-   - integrate a specific AWS capability;
-   - or retain the stronger AWS-free Alexa+ build.
-6. If an AWS integration is selected, implement it behind a controlled adapter so the authoritative tool/state path remains unchanged and the non-AWS deterministic path can remain available where appropriate.
-7. Do not write `Built With`/AWS submission claims until the integration is genuinely implemented and verified.
-
-### Open Source mini challenge
-
-Because Host is a new public MIT repository, Stage 08 should also verify current Open Source mini-challenge eligibility and submission fields. If eligible, preserve the exact repository URL, GitHub username, contribution timeframe, and clear description of what was built/how/why for the eventual Devpost submission.
-
-### Competition research controls
-
-Use current official sources for time-sensitive competition/API/service claims. Distinguish verified requirements from recommendations. Do not assume partner-only Alexa tooling or AWS access exists.
+Stage 08's decision is recorded above. The AWS account exists, but integration is deliberately deferred by the user for now. Proceed to Stage 09 hardening with the verified Stage 07 runtime and Open Source mini entry. Do not claim AWS Builder unless the deferred Bedrock + AgentCore Memory integration is later implemented and verified.
 
 ## Later controlled work
 
