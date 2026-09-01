@@ -10,8 +10,9 @@ import type {
   Menu,
   PreparationTask,
   ShoppingItem,
+  UndoRecord,
 } from "./types.js";
-import { assertMenuSatisfiesConstraints, validateConstraint, validateMenu } from "./validation.js";
+import { assertMenuSatisfiesConstraints, assertMenuServesGuestCount, validateConstraint, validateMenu } from "./validation.js";
 
 const EVENT_STATUSES = new Set(["draft", "planned", "sourcing", "preparing", "live", "complete", "cancelled"]);
 const CONSTRAINT_TYPES = new Set(["dietary", "allergen", "budget", "prep_time", "equipment"]);
@@ -151,7 +152,7 @@ function validatePersistedInventory(value: unknown, key: string): asserts value 
   if (!INVENTORY_SOURCES.has(value.source)) throw new DomainError(`state.inventory.${key}.source is invalid.`, "INVALID_PERSISTED_STATE");
 }
 
-function validatePersistedShopping(value: unknown, index: number): asserts value is ShoppingItem {
+function validatePersistedShopping(value: unknown, index: number, currency: string): asserts value is ShoppingItem {
   if (!isRecord(value)) throw new DomainError(`state.shopping[${index}] must be an object.`, "INVALID_PERSISTED_STATE");
   assertString(value.itemId, `state.shopping[${index}].itemId`);
   assertString(value.name, `state.shopping[${index}].name`);
@@ -169,8 +170,20 @@ function validatePersistedShopping(value: unknown, index: number): asserts value
     assertString(candidate.name, `candidateProducts[${candidateIndex}].name`);
     assertFiniteNumber(candidate.price, `candidateProducts[${candidateIndex}].price`, 0);
     assertString(candidate.currency, `candidateProducts[${candidateIndex}].currency`);
+    if (candidate.currency !== currency) throw new DomainError(`candidateProducts[${candidateIndex}].currency does not match event currency.`, "INVALID_PERSISTED_STATE");
   }
   if (value.selectedProductId !== undefined) assertString(value.selectedProductId, `state.shopping[${index}].selectedProductId`);
+  const candidateIds = new Set<string>();
+  for (const candidate of value.candidateProducts as unknown as Array<{ id: string }>) {
+    if (candidateIds.has(candidate.id)) throw new DomainError(`state.shopping[${index}] contains duplicate candidate ${candidate.id}.`, "INVALID_PERSISTED_STATE");
+    candidateIds.add(candidate.id);
+  }
+  if ((value.status === "selected" || value.status === "simulated_purchased")) {
+    if (typeof value.selectedProductId !== "string" || !candidateIds.has(value.selectedProductId)) {
+      throw new DomainError(`state.shopping[${index}] requires a valid selected product for status ${value.status}.`, "INVALID_PERSISTED_STATE");
+    }
+    if (value.toBuyQuantity <= 0) throw new DomainError(`state.shopping[${index}] cannot be ${value.status} without a deficit.`, "INVALID_PERSISTED_STATE");
+  }
   const expectedDeficit = Math.max(value.requiredQuantity - value.onHandQuantity, 0);
   if (value.toBuyQuantity !== expectedDeficit) {
     throw new DomainError(`state.shopping[${index}] violates shopping deficit invariant.`, "INVALID_PERSISTED_STATE");
@@ -224,6 +237,68 @@ function validatePersistedReceipt(value: unknown, index: number): asserts value 
   }
   if (value.status === "succeeded" && value.executedAt === undefined) {
     throw new DomainError(`Succeeded action receipt ${value.id} is missing executedAt.`, "INVALID_PERSISTED_STATE");
+  }
+}
+
+function validateUndoSnapshot(value: unknown, field: string, currentEvent: EventRecord): void {
+  if (!isRecord(value)) throw new DomainError(`${field}.snapshot must be an object.`, "INVALID_PERSISTED_STATE");
+  const hasSurface = ["event", "menus", "inventory", "shopping", "tasks"].some((key) => value[key] !== undefined);
+  if (!hasSurface) throw new DomainError(`${field}.snapshot must contain at least one restorable state surface.`, "INVALID_PERSISTED_STATE");
+
+  let snapshotEvent = currentEvent;
+  if (value.event !== undefined) {
+    validatePersistedEvent(value.event);
+    snapshotEvent = value.event as EventRecord;
+    if (snapshotEvent.id !== currentEvent.id) throw new DomainError(`${field}.snapshot.event belongs to another event.`, "INVALID_PERSISTED_STATE");
+    if (snapshotEvent.revision > currentEvent.revision) throw new DomainError(`${field}.snapshot.event revision exceeds current revision.`, "INVALID_PERSISTED_STATE");
+  }
+  if (value.menus !== undefined) {
+    if (!isRecord(value.menus)) throw new DomainError(`${field}.snapshot.menus must be an object map.`, "INVALID_PERSISTED_STATE");
+    for (const [key, menu] of Object.entries(value.menus)) validatePersistedMenu(menu, key);
+  }
+  if (value.inventory !== undefined) {
+    if (!isRecord(value.inventory)) throw new DomainError(`${field}.snapshot.inventory must be an object map.`, "INVALID_PERSISTED_STATE");
+    for (const [key, item] of Object.entries(value.inventory)) validatePersistedInventory(item, key);
+  }
+  if (value.shopping !== undefined) {
+    if (!Array.isArray(value.shopping)) throw new DomainError(`${field}.snapshot.shopping must be an array.`, "INVALID_PERSISTED_STATE");
+    value.shopping.forEach((item, index) => validatePersistedShopping(item, index, snapshotEvent.currency));
+  }
+  if (value.tasks !== undefined) {
+    if (!isRecord(value.tasks)) throw new DomainError(`${field}.snapshot.tasks must be an object map.`, "INVALID_PERSISTED_STATE");
+    for (const [key, task] of Object.entries(value.tasks)) validatePersistedTask(task, key, snapshotEvent.revision);
+    validateTaskGraph(value.tasks as Record<string, PreparationTask>);
+  }
+}
+
+function validatePersistedUndo(
+  value: unknown,
+  key: string,
+  currentEvent: EventRecord,
+  receipts: ActionReceipt[],
+): asserts value is UndoRecord {
+  if (!isRecord(value)) throw new DomainError(`state.undo.${key} must be an object.`, "INVALID_PERSISTED_STATE");
+  assertString(value.receiptId, `state.undo.${key}.receiptId`);
+  if (value.receiptId !== key) throw new DomainError(`Undo map key ${key} does not match receiptId ${value.receiptId}.`, "INVALID_PERSISTED_STATE");
+  assertString(value.actionType, `state.undo.${key}.actionType`);
+  assertPositiveInteger(value.appliedRevision, `state.undo.${key}.appliedRevision`);
+  if (value.appliedRevision > currentEvent.revision) throw new DomainError(`Undo record ${key} revision exceeds current event revision.`, "INVALID_PERSISTED_STATE");
+  assertDate(value.createdAt, `state.undo.${key}.createdAt`);
+  if (value.reversedAt !== undefined) assertDate(value.reversedAt, `state.undo.${key}.reversedAt`);
+  validateUndoSnapshot(value.snapshot, `state.undo.${key}`, currentEvent);
+
+  const receipt = receipts.find((candidate) => candidate.id === key);
+  if (!receipt) throw new DomainError(`Undo record ${key} has no matching receipt.`, "INVALID_PERSISTED_STATE");
+  if (!receipt.reversible) throw new DomainError(`Undo record ${key} points to a non-reversible receipt.`, "INVALID_PERSISTED_STATE");
+  if (receipt.actionType !== value.actionType) throw new DomainError(`Undo record ${key} action type does not match its receipt.`, "INVALID_PERSISTED_STATE");
+  if (value.reversedAt !== undefined && receipt.status !== "reversed") {
+    throw new DomainError(`Undo record ${key} is marked reversed but its receipt is not.`, "INVALID_PERSISTED_STATE");
+  }
+  if (receipt.status === "reversed" && value.reversedAt === undefined) {
+    throw new DomainError(`Reversed receipt ${key} is missing undo reversal metadata.`, "INVALID_PERSISTED_STATE");
+  }
+  if (receipt.status !== "succeeded" && receipt.status !== "reversed") {
+    throw new DomainError(`Undo record ${key} points to receipt status ${receipt.status}.`, "INVALID_PERSISTED_STATE");
   }
 }
 
@@ -322,6 +397,7 @@ function validateShoppingAgainstCommittedMenu(state: HostState): void {
   const menu = state.menus[selectedMenuId];
   if (!menu) throw new DomainError("Selected menu is missing from persisted menus.", "INVALID_PERSISTED_STATE");
   assertMenuSatisfiesConstraints(menu, state.event.constraints);
+  assertMenuServesGuestCount(menu, state.event.guestCount);
 
   if (state.shopping.length > 0) {
     const expected = new Map(buildShoppingPlan(menu, state.inventory).map((item) => [item.itemId, item]));
@@ -355,7 +431,7 @@ export function validateHostState(value: unknown): asserts value is HostState {
   for (const [key, item] of Object.entries(value.inventory)) validatePersistedInventory(item, key);
 
   if (!Array.isArray(value.shopping)) throw new DomainError("state.shopping must be an array.", "INVALID_PERSISTED_STATE");
-  value.shopping.forEach((item, index) => validatePersistedShopping(item, index));
+  value.shopping.forEach((item, index) => validatePersistedShopping(item, index, event.currency));
   const shoppingIds = new Set<string>();
   for (const item of value.shopping as unknown as ShoppingItem[]) {
     if (shoppingIds.has(item.itemId)) throw new DomainError(`Duplicate shopping item ${item.itemId}.`, "INVALID_PERSISTED_STATE");
@@ -368,6 +444,10 @@ export function validateHostState(value: unknown): asserts value is HostState {
   if (!Array.isArray(value.receipts)) throw new DomainError("state.receipts must be an array.", "INVALID_PERSISTED_STATE");
   value.receipts.forEach((receipt, index) => validatePersistedReceipt(receipt, index));
   assertUniqueIds(value.receipts as unknown as ActionReceipt[], "state.receipts");
+
+  if (!isRecord(value.undo)) throw new DomainError("state.undo must be an object map.", "INVALID_PERSISTED_STATE");
+  const receipts = value.receipts as unknown as ActionReceipt[];
+  for (const [key, undo] of Object.entries(value.undo)) validatePersistedUndo(undo, key, event, receipts);
 
   if (!Array.isArray(value.audit)) throw new DomainError("state.audit must be an array.", "INVALID_PERSISTED_STATE");
   value.audit.forEach((audit, index) => validatePersistedAudit(audit, index, event.id));

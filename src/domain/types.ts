@@ -145,6 +145,23 @@ export interface AuditEvent {
   delta: string;
 }
 
+export interface UndoSnapshot {
+  event?: EventRecord;
+  menus?: Record<string, Menu>;
+  inventory?: Record<string, InventoryItem>;
+  shopping?: ShoppingItem[];
+  tasks?: Record<string, PreparationTask>;
+}
+
+export interface UndoRecord {
+  receiptId: string;
+  actionType: string;
+  appliedRevision: number;
+  createdAt: string;
+  snapshot: UndoSnapshot;
+  reversedAt?: string;
+}
+
 export interface HostState {
   event: EventRecord;
   menus: Record<string, Menu>;
@@ -153,6 +170,7 @@ export interface HostState {
   tasks: Record<string, PreparationTask>;
   receipts: ActionReceipt[];
   audit: AuditEvent[];
+  undo: Record<string, UndoRecord>;
 }
 
 export interface EventCreateInput {

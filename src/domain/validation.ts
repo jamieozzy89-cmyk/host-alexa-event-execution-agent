@@ -150,3 +150,16 @@ export function assertMenuSatisfiesConstraints(menu: Menu, constraints: Constrai
     }
   }
 }
+
+export function assertMenuServesGuestCount(menu: Menu, guestCount: number): void {
+  if (!Number.isFinite(guestCount) || guestCount <= 0) {
+    throw new DomainError("guestCount must be positive before menu capacity can be checked.", "INVALID_INPUT");
+  }
+  const undersized = menu.items.filter((item) => item.servings < guestCount);
+  if (undersized.length > 0) {
+    throw new DomainError(
+      `Menu ${menu.id} does not serve ${guestCount} guests; undersized item(s): ${undersized.map((item) => item.id).join(", ")}.`,
+      "MENU_INSUFFICIENT_SERVINGS",
+    );
+  }
+}

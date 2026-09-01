@@ -1,9 +1,15 @@
 {
   "name": "host-alexa-event-execution-agent",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": false,
   "type": "module",
-  "description": "Authoritative execution and persistence foundation for the Host Alexa+ hackathon simulation.",
+  "description": "Authoritative execution, persistence and intent-tool foundation for the Host Alexa+ hackathon simulation.",
+  "exports": {
+    ".": {
+      "types": "./dist/src/application/index.d.ts",
+      "import": "./dist/src/application/index.js"
+    }
+  },
   "scripts": {
     "clean": "rm -rf dist",
     "build": "tsc -p tsconfig.json",

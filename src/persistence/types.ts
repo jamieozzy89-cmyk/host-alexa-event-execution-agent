@@ -1,6 +1,6 @@
 import type { HostState } from "../domain/types.js";
 
-export const HOST_PERSISTENCE_SCHEMA_VERSION = 1 as const;
+export const HOST_PERSISTENCE_SCHEMA_VERSION = 2 as const;
 
 export interface StorageLike {
   getItem(key: string): string | null;

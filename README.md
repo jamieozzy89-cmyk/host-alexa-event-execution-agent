@@ -2,7 +2,7 @@
 
 **Competition:** Build, Ship, Shape: Amazon Developer Hackathon 2026  
 **Primary track:** Alexa+ — simulated Alexa+ web experience  
-**Current verified stage:** Stage 03 — persistence/resume foundation  
+**Current verified stage:** Stage 04 — controlled tool/action layer  
 **Competition deadline:** 23 October 2026, 20:00 GMT+1 (entrant-supplied competition page)
 
 ## What Host is
@@ -13,37 +13,37 @@ Core promise:
 
 > From “people are coming over” to “everything is actually ready.”
 
-A defining rule is that conversational text can never make an action true. State changes must pass through explicit domain/tool actions and produce verifiable state and receipts.
+A defining rule is that conversational text can never make an action true. Application-facing code must use validated intent tools; those tools invoke the authoritative domain engine, persist successful state changes, and return structured success/failure results.
 
 ## Verified implementation state
 
-Stage 03 adds persistence/resume integrity to the verified Stage 02 domain engine. No Alexa simulation UI, agent/model, voice layer, AWS service, deployment, or demo video is claimed yet.
+Stage 04 adds the controlled application/tool boundary on top of the verified Stage 02 domain engine and Stage 03 persistence layer. No language-model agent, Alexa simulation UI, voice layer, AWS service, deployment, or demo video is claimed yet.
 
 Implemented and directly tested:
 
-- strict TypeScript domain types and runtime validation;
-- monotonically increasing event revisions and stale-write rejection;
-- validated event lifecycle transitions;
-- confirmed menu commitment;
-- dietary/allergen compatibility checks for represented constraints;
-- confirmed inventory recording;
-- shopping deficit calculation (`required - confirmed on hand`);
-- refusal to guess incompatible unit conversions;
-- preparation dependency graph with cycle/unknown-dependency rejection;
-- blocked/ready/done task transitions;
-- two-phase, read-only change-impact analysis followed by confirmed atomic apply;
-- preservation of completed tasks only when their task definition is unchanged;
-- engine-issued pending impact identity so forged impact objects cannot be applied;
-- action receipts and append-only audit events;
-- full six-person dinner → late seventh vegan guest controlled scenario;
-- comprehensive restore-time state revalidation;
-- versioned persistence snapshots with SHA-256 integrity checks;
-- browser/localStorage-compatible persistence adapter;
-- staged primary/backup/temporary recovery behaviour;
-- restart/reload reconstruction without generating false new domain history;
-- deliberate invalidation of uncommitted change analyses after restart.
+- authoritative TypeScript domain state and invariants;
+- versioned persistence with SHA-256 integrity verification and restart recovery;
+- **17 intent-oriented Host tools** covering current application mutations and reads;
+- strict top-level tool input validation and structured unknown-tool failure;
+- positive-integer guest-count enforcement at the tool boundary;
+- parseable confirmation timestamps for confirmation-bound actions;
+- tool descriptors with explicit risk and confirmation metadata;
+- package-root exports that expose `HostToolRuntime` but not `HostDomainEngine`;
+- package subpath blocking for direct domain-engine imports;
+- automatic persistence checkpoints after committed tool mutations;
+- live-session rollback when a persistence checkpoint fails;
+- deterministic menu-proposal simulation behind an adapter;
+- proposal-time dietary/allergen and guest-capacity validation;
+- deterministic product-catalogue simulation behind an adapter;
+- simulated cart/checkout with an idempotency key;
+- reconciliation of checkout currency, reference and total before purchase state is committed;
+- durable failed-action receipts when checkout returns failure, invalid data, or throws;
+- persisted reversible-action metadata and safe latest-revision undo;
+- read-only late-change impact analysis followed by explicit confirmed apply;
+- deliberate invalidation of uncommitted proposals/impacts across restart;
+- complete tool-only shopping, preparation, replanning, history and undo journeys.
 
-Current verification result: **30 tests passed, 0 failed**.
+Current verification result: **48 tests passed, 0 failed**.
 
 ## Run locally
 
@@ -56,28 +56,44 @@ Requirements:
 npm test
 ```
 
-The test command compiles the TypeScript source and runs the domain, primary-scenario, and persistence/restart suites.
+The test command compiles the source and runs the domain, persistence, primary-scenario and tool-runtime suites.
+
+## Application-facing API
+
+The package root exports the controlled application surface, including:
+
+- `HostToolRuntime`
+- tool descriptors/types
+- persistence adapter interface and JSON storage adapter
+- simulated menu, catalogue and checkout adapters
+
+The package root deliberately does **not** export the domain engine or state validator. `package.json` also exposes only the root application entry, so package subpath imports to the domain engine are rejected.
+
+## Tool surface
+
+Current tools:
+
+`create_event`, `update_event_constraints`, `propose_menu`, `commit_menu`, `record_inventory`, `build_shopping_plan`, `prepare_cart`, `confirm_cart_action`, `build_preparation_plan`, `mark_task_complete`, `advance_event_status`, `get_next_action`, `get_event_status`, `analyse_change_impact`, `apply_confirmed_change`, `get_action_history`, `undo_reversible_action`.
+
+`advance_event_status` was added at Stage 04 so the existing validated lifecycle mutation is not left as an application-facing bypass around the tool boundary.
+
+## Simulation boundary
+
+Menu proposals, product candidates and checkout are currently deterministic simulations. They are explicitly adapters and are not represented as calls to Amazon retail, grocery providers, or any external purchasing service.
 
 ## Repository structure
 
-- `src/domain/` — authoritative domain engine and restore-time state validation
-- `src/persistence/` — persistence contract, staged JSON storage adapter, resume service
-- `tests/` — invariant, failure, state-transition, scenario, persistence and recovery tests
+- `src/application/` — public package entry point
+- `src/tools/` — validated intent tool descriptors/runtime
+- `src/domain/` — authoritative state engine (internal to application package)
+- `src/persistence/` — verified persistence/resume layer
+- `src/simulated-services/` — clearly labelled deterministic demo adapters
+- `tests/` — domain, persistence, scenario and tool-boundary verification
 - `docs/` — public technical documentation
 - `LICENSE` — MIT licence
 
-## Persistence model
-
-The persistence adapter uses a `StorageLike` contract compatible with browser `localStorage`. Snapshots are versioned and SHA-256 protected, but checksum verification is not treated as sufficient: restored state must also pass the domain-state validator.
-
-A save stages and verifies data before primary replacement and preserves a verified backup. Loading can report whether it recovered from backup/temporary storage.
-
-Uncommitted change-impact proposals are intentionally not restored. After reload they must be recalculated against the current authoritative revision before they can be confirmed.
-
-See `docs/PERSISTENCE_STAGE03.md` for the complete verified behaviour.
+See `docs/TOOL_LAYER_STAGE04.md` for the Stage 04 design and verified boundary.
 
 ## Current boundary
 
-The current code proves domain and persistence behaviour without any UI or language model. This is intentional: the next tool/action layer must consume these controlled operations rather than create an alternate path for state mutation.
-
-The next controlled stage is **Stage 04 — tool/action layer**.
+The application can now be driven completely through controlled tools, without exposing a supported direct mutation route to future application consumers. The next controlled stage is **Stage 05 — agent/orchestrator**: connect an agent behind an adapter and verify on controlled conversations that it chooses the correct tools, asks for missing information, respects confirmation boundaries, reports authoritative state, replans late changes and recovers from failures.
