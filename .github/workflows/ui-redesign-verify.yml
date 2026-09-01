@@ -1,0 +1,69 @@
+name: Verify editorial Host UI redesign
+on:
+  push:
+    branches: [ui-redesign-editorial]
+    paths:
+      - '.ui-redesign/trigger'
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ui-redesign-editorial
+      - name: Reconstruct exact stylesheet
+        shell: bash
+        run: |
+          set -euo pipefail
+          gzip -dc .ui-redesign/styles.css.gz > web/styles.css
+          test "$(git hash-object web/main.ts)" = "6415e826d0d6fa9f67f9c47a6d5cb414c5e26fe7"
+          test "$(git hash-object web/render.ts)" = "abb9a7aee41551407b88bc25ad49f7f8b64d2d8b"
+          test "$(git hash-object web/styles.css)" = "e72283db6e46984f746e6eaa680cf7d206dc3ae2"
+      - name: Install dependencies and Chromium
+        run: |
+          npm ci --ignore-scripts
+          npx playwright install --with-deps chromium
+      - name: Verify backend and production build
+        run: |
+          npm test
+          npm run build:web
+      - name: Run unchanged browser acceptance suite
+        run: npx playwright test tests/web/host-ui.spec.ts tests/web/hardening-ui.spec.ts tests/web/voice-ui.spec.ts --project=echo-show --project=mobile
+      - name: Start verified preview
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx vite preview --host 127.0.0.1 --port 4173 > /tmp/host-redesign-vite.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/host-redesign-vite.log
+          exit 1
+      - name: Capture redesigned product states
+        env:
+          HOST_URL: http://127.0.0.1:4173
+        run: |
+          rm -rf submission/screenshots
+          node submission/capture-stage10.mjs
+          mkdir -p /tmp/host-redesign-screenshots
+          cp submission/screenshots/*.png /tmp/host-redesign-screenshots/
+      - name: Upload redesign screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: host-editorial-ui-redesign
+          path: /tmp/host-redesign-screenshots/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Preserve verified stylesheet only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add web/styles.css
+          git commit -m "Verify editorial Host UI redesign"
+          git pull --rebase origin ui-redesign-editorial
+          git push origin HEAD:ui-redesign-editorial
