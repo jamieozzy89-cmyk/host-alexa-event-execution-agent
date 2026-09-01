@@ -25,3 +25,21 @@ export { createDefaultMenuProposalAdapter, DEMO_MENU_TEMPLATES, StaticMenuPropos
 export { DemoProductCatalogueAdapter } from "../simulated-services/product-catalogue.js";
 export { JsonStoragePersistenceAdapter } from "../persistence/storage-adapter.js";
 export type { HostPersistenceAdapter, StorageLike } from "../persistence/types.js";
+
+export { HostAgentOrchestrator } from "../agent/orchestrator.js";
+export { HeuristicIntentInterpreter, constraintsFromText } from "../agent/interpreter.js";
+export { JsonModelProxyAdapter, ModelBackedIntentInterpreter, ResilientIntentInterpreter } from "../agent/model.js";
+export type {
+  AgentAction,
+  AgentCard,
+  AgentReply,
+  AgentReplyStatus,
+  ConversationState,
+  HostAgentDependencies,
+  HostIntentKind,
+  HostIntentSlots,
+  IntentContext,
+  IntentInterpreter,
+  InterpretedHostIntent,
+  StructuredIntentModel,
+} from "../agent/types.js";
