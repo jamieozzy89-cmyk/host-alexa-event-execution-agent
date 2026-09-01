@@ -1,3 +1,3 @@
-# Stage 09 development branch
+# Stage 09 development branch frozen
 
-Frozen. The verified release candidate is the publication source; this branch is not the release source.
+Release publication is controlled by clean candidate commit `7498cbe7e10fbe6df068d7eb91e9793c06284c79`.
