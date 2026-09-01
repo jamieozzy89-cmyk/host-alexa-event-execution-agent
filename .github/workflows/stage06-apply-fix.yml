@@ -21,43 +21,38 @@ jobs:
           from pathlib import Path
 
           render = Path('web/render.ts')
-          source = render.read_text()
-          old = '''  view.append(head);
-            if (prep) view.append(renderPrep(prep, reply, handlers, state, true));'''
-          new = '''  view.append(head);
-            if (reply?.speech) view.append(el("p", "live-status", reply.speech));
-            if (prep) view.append(renderPrep(prep, reply, handlers, state, true));'''
-          if source.count(old) != 1:
-              raise SystemExit('renderLive source pattern did not match exactly once')
-          render.write_text(source.replace(old, new))
+          lines = render.read_text().splitlines()
+          target = '  if (prep) view.append(renderPrep(prep, reply, handlers, state, true));'
+          if lines.count(target) != 1:
+              raise SystemExit(f'renderLive target count was {lines.count(target)}')
+          index = lines.index(target)
+          lines.insert(index, '  if (reply?.speech) view.append(el("p", "live-status", reply.speech));')
+          render.write_text('\n'.join(lines) + '\n')
 
           styles = Path('web/styles.css')
-          css = styles.read_text()
-          old_css = '''.mode-copy { margin: 14px 0 0; color: var(--text-soft); font-size: clamp(17px, 1.8vw, 24px); line-height: 1.5; }
-            .live-view {'''
-          new_css = '''.mode-copy { margin: 14px 0 0; color: var(--text-soft); font-size: clamp(17px, 1.8vw, 24px); line-height: 1.5; }
-            .live-status { margin: -8px 0 24px; color: var(--text-soft); font-size: clamp(18px, 2vw, 26px); font-weight: 800; line-height: 1.35; }
-            .live-view {'''
-          if css.count(old_css) != 1:
-              raise SystemExit('live status CSS source pattern did not match exactly once')
-          styles.write_text(css.replace(old_css, new_css))
+          lines = styles.read_text().splitlines()
+          target = '.mode-copy { margin: 14px 0 0; color: var(--text-soft); font-size: clamp(17px, 1.8vw, 24px); line-height: 1.5; }'
+          if lines.count(target) != 1:
+              raise SystemExit(f'mode-copy target count was {lines.count(target)}')
+          index = lines.index(target) + 1
+          lines.insert(index, '.live-status { margin: -8px 0 24px; color: var(--text-soft); font-size: clamp(18px, 2vw, 26px); font-weight: 800; line-height: 1.35; }')
+          styles.write_text('\n'.join(lines) + '\n')
 
           test = Path('tests/web/host-ui.spec.ts')
-          tests = test.read_text()
-          old_test = '''async function openClean(page: Page): Promise<void> {
-            await page.addInitScript(() => window.localStorage.clear());
-            await page.goto("/");
-            await expect(page.getByRole("button", { name: "Plan a dinner" })).toBeVisible();
-          }'''
-          new_test = '''async function openClean(page: Page): Promise<void> {
-            await page.goto("/");
-            await page.evaluate(() => window.localStorage.clear());
-            await page.reload();
-            await expect(page.getByRole("button", { name: "Plan a dinner" })).toBeVisible();
-          }'''
-          if tests.count(old_test) != 1:
-              raise SystemExit('openClean test source pattern did not match exactly once')
-          test.write_text(tests.replace(old_test, new_test))
+          lines = test.read_text().splitlines()
+          first = '  await page.addInitScript(() => window.localStorage.clear());'
+          second = '  await page.goto("/");'
+          if lines.count(first) != 1:
+              raise SystemExit(f'openClean storage target count was {lines.count(first)}')
+          index = lines.index(first)
+          if index + 1 >= len(lines) or lines[index + 1] != second:
+              raise SystemExit('openClean navigation line did not follow storage init line')
+          lines[index:index + 2] = [
+              '  await page.goto("/");',
+              '  await page.evaluate(() => window.localStorage.clear());',
+              '  await page.reload();',
+          ]
+          test.write_text('\n'.join(lines) + '\n')
           PY
       - name: Install browser environment
         run: |
@@ -74,6 +69,13 @@ jobs:
           set -euo pipefail
           ! grep -RInE 'HostDomainEngine|validateHostState' web
           ! grep -RInE 'TODO|FIXME|HACK' web tests/web
+      - name: Verify corrected blob identities
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object web/render.ts)" = "344d2b2b93c42458858e813dea26640e80c7bcc3"
+          test "$(git hash-object web/styles.css)" = "b8f7015a4fa1ee896c64bb9b8cbc39ddb8c48b57"
+          test "$(git hash-object tests/web/host-ui.spec.ts)" = "03a3ba64f2064ec8580887db6146e73169d6c76f"
       - name: Commit verified browser fixes
         shell: bash
         run: |
