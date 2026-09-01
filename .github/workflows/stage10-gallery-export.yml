@@ -1,0 +1,28 @@
+name: Stage 10 gallery export
+on:
+  push:
+    branches: [stage10-submission]
+    paths:
+      - '.stage10-gallery-export-trigger'
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: stage10-submission
+      - name: Validate gallery set
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(find submission/screenshots -maxdepth 1 -type f -name '*.png' | wc -l)" -eq 7
+          file submission/screenshots/*.png
+      - name: Upload gallery artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: host-stage10-gallery
+          path: submission/screenshots/*.png
+          if-no-files-found: error
+          retention-days: 30
