@@ -1,0 +1,32 @@
+name: Clean Stage 09 release verification
+on:
+  push:
+    branches: [stage09-release-verification]
+    paths:
+      - '.stage09-release-verify-trigger'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies and Chromium
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: Verify backend, web build and browser acceptance
+        run: |
+          npm test
+          npm run build:web
+          npm run test:web
+      - name: Verify security and clean release boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm audit --omit=dev
+          ! grep -RInE '\.innerHTML|insertAdjacentHTML|document\.write' web
+          ! grep -RInE 'HostDomainEngine|validateHostState' web
+          ! grep -RInE 'from "\.\./src/domain|from "\.\./src/persistence|from "\.\./src/tools' web
+          test -z "$(find . -maxdepth 2 -type f -name '.stage09-*' ! -name '.stage09-release-verify-trigger' -print)"
+          test ! -e .github/workflows/stage09-docs.yml
+          test ! -e .github/workflows/stage09-hardening.yml
+          test ! -e .github/workflows/stage09-repro.yml
