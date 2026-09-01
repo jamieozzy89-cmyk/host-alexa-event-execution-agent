@@ -4,8 +4,9 @@ import { render, type UiHandlers } from "./render.js";
 import { createBrowserHostRuntime } from "./runtime.js";
 import type { HostUiState, ViewMode } from "./types.js";
 
-const root = document.querySelector<HTMLElement>("#app");
-if (!root) throw new Error("Host UI root was not found.");
+const appRoot = document.querySelector<HTMLElement>("#app");
+if (!appRoot) throw new Error("Host UI root was not found.");
+const root: HTMLElement = appRoot;
 
 const runtime = createBrowserHostRuntime();
 const conversationId = `ui-${crypto.randomUUID()}`;
@@ -140,7 +141,7 @@ const handlers: UiHandlers = {
   mode: switchMode,
   toggleTheme,
   expand: (card) => { state.expandedCard = card; renderNow(); },
-  closeExpanded: () => { state.expandedCard = undefined; renderNow(); },
+  closeExpanded: () => { delete state.expandedCard; renderNow(); },
 };
 
 async function initialise(): Promise<void> {
