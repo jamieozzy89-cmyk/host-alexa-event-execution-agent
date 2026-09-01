@@ -6,8 +6,8 @@
 **Competition:** Build, Ship, Shape: Amazon Developer Hackathon 2026  
 **Primary track:** Alexa+ — simulated Alexa+ web experience  
 **Current accepted product stage:** Stage 07 — voice + touch interaction  
-**Current competition decision stage:** Stage 08 — Open Source locked; AWS Builder conditional on verified AWS access
-**Next executable product stage if AWS access remains unavailable:** Stage 09 — hardening
+**Current competition decision stage:** Stage 08 — Open Source locked; AWS Builder deliberately deferred for now
+**Next executable product stage:** Stage 09 — hardening
 
 This handover travels with the full repository source. It records the governing product design, verified stage history, current boundaries, test evidence, unresolved work, and exact continuation point required to continue without relying on chat memory.
 
@@ -302,9 +302,9 @@ Bedrock would sit behind Host's existing `StructuredIntentModel` / `ModelBackedI
 
 AgentCore Memory would hold **non-authoritative cross-event preferences** only, such as cuisine/style or normal prep preferences. Retrieved memory may suggest context; it must never silently become a confirmed dietary/allergen constraint, completion state, committed menu, transaction or other authoritative event fact.
 
-#### AWS blocker
+#### AWS access / current decision
 
-The current environment has no governed AWS connection or AWS/Bedrock plugin. Only the local-files connection is present. No AWS credentials/account access are available to verify real Bedrock or AgentCore calls.
+The user has confirmed that an AWS account exists. However, the current project environment still has no governed AWS connection or AWS/Bedrock plugin, and the user has explicitly chosen to continue without connecting AWS for now. Therefore the Bedrock + AgentCore Memory implementation is deliberately deferred rather than abandoned.
 
 Therefore:
 
@@ -318,9 +318,9 @@ Full Stage 08 decision/evidence: `docs/COMPETITION_INTEGRATION_STAGE08.md`.
 
 ### Exact continuation after Stage 08
 
-If secure AWS account access becomes available, implement Bedrock + AgentCore Memory behind the controlled adapters and rerun all existing plus AWS-specific tests before claiming AWS Builder.
+If the user later chooses to connect AWS securely to the project environment, implement Bedrock + AgentCore Memory behind the controlled adapters and rerun all existing plus AWS-specific tests before claiming AWS Builder.
 
-If AWS access remains unavailable, Stage 08 is complete as a controlled decision: retain the stronger verified Stage 07 Alexa+ product, enter Open Source, do **not** claim AWS Builder, and proceed directly to Stage 09 hardening.
+For now, Stage 08 is complete as a controlled decision: retain the verified Stage 07 Alexa+ product, enter Open Source, do **not** claim AWS Builder yet, and proceed directly to Stage 09 hardening.
 
 ## Current simulation and capability boundaries
 
@@ -402,10 +402,7 @@ npm run verify:stage07
 
 ## Exact continuation point
 
-Stage 08's decision is recorded above. The next executable action depends only on verified AWS access:
-
-- **AWS access available:** implement the controlled Bedrock + AgentCore Memory design, verify real calls/cost/failure behavior, then continue hardening.
-- **AWS access unavailable:** proceed to Stage 09 hardening with the verified Stage 07 runtime and Open Source mini entry; do not claim AWS Builder.
+Stage 08's decision is recorded above. The AWS account exists, but integration is deliberately deferred by the user for now. Proceed to Stage 09 hardening with the verified Stage 07 runtime and Open Source mini entry. Do not claim AWS Builder unless the deferred Bedrock + AgentCore Memory integration is later implemented and verified.
 
 ## Later controlled work
 

@@ -172,14 +172,14 @@ If AWS account access is supplied, implement in this order:
 - **Replacing Host orchestration with Strands: NO.**
 - **Converting the current simulated route to AgentCore Gateway/MCP solely for the mini challenge: NO.**
 
-### Current blocker
+### Current status
 
-A real AWS Builder implementation cannot be verified until AWS account/credential access is available to the project environment.
+The user has confirmed that an AWS account exists, but has explicitly chosen to continue without connecting it to the project environment for now. The environment itself still has no governed AWS/Bedrock connection, so no real Bedrock or AgentCore call can currently be verified here.
 
-This is an external access blocker, not a reason to substitute mocked AWS calls or to claim an integration prematurely.
+The AWS Builder route is therefore **deferred, not rejected**. This is not a reason to substitute mocked AWS calls or claim an integration prematurely.
 
 ## Exact continuation
 
-If AWS access becomes available, continue with the controlled Bedrock + AgentCore Memory implementation plan above.
+The user has chosen to defer AWS integration for now. Retain the verified Stage 07 Alexa+ build, enter the Open Source mini challenge, and proceed to Stage 09 hardening without claiming AWS Builder.
 
-If AWS access is deliberately not supplied, retain the verified Stage 07 Alexa+ build, enter the Open Source mini challenge, and proceed to Stage 09 hardening without claiming AWS Builder.
+If AWS is connected later, resume the controlled Bedrock + AgentCore Memory implementation plan above before any AWS Builder claim.

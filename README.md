@@ -150,7 +150,7 @@ Interaction rules enforced by the application/tests include:
 ## Competition mini-challenge status
 
 - **Open Source:** selected for entry. Host is a new public MIT repository with substantive implementation and tests. Submission evidence is prepared in `submission/OPEN_SOURCE_MINI_EVIDENCE.md`.
-- **AWS Builder:** not currently claimed. Current research selects Bedrock + AgentCore Memory as the only AWS architecture worth pursuing, but no real AWS account/credential connection is available in this environment, so no AWS runtime integration has been implemented or verified.
+- **AWS Builder:** not currently claimed. The user has an AWS account, but has chosen to defer connecting it for now. Bedrock + AgentCore Memory remains the selected future AWS architecture; no AWS runtime integration has yet been implemented or verified.
 
 See `docs/COMPETITION_INTEGRATION_STAGE08.md` for the controlled decision and AWS integration boundary.
 
