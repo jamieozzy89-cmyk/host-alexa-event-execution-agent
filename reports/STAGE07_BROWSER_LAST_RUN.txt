@@ -5,91 +5,18 @@
 
 Running 14 tests using 2 workers
 
-[1/14] [echo-show] › tests/web/host-ui.spec.ts:39:1 › complete core journey works through visible touch/action routes
-[2/14] [echo-show] › tests/web/voice-ui.spec.ts:97:1 › voice-only core journey reaches authoritative execution and receipts after one activation
+[1/14] [echo-show] › tests/web/voice-ui.spec.ts:97:1 › voice-only core journey reaches authoritative execution and receipts after one activation
+[2/14] [echo-show] › tests/web/host-ui.spec.ts:39:1 › complete core journey works through visible touch/action routes
 [3/14] [echo-show] › tests/web/host-ui.spec.ts:66:1 › late vegan guest is previewed before the confirmed plan update
 [4/14] [echo-show] › tests/web/voice-ui.spec.ts:118:1 › spoken no cancels a pending material action without requiring touch confirmation
-[5/14] [echo-show] › tests/web/host-ui.spec.ts:83:1 › reload resumes authoritative event state and drops stale confirmation UI
-[6/14] [echo-show] › tests/web/host-ui.spec.ts:99:1 › interactive controls meet touch target floor and the page avoids document overflow
-[7/14] [mobile] › tests/web/host-ui.spec.ts:39:1 › complete core journey works through visible touch/action routes
-[8/14] [mobile] › tests/web/host-ui.spec.ts:66:1 › late vegan guest is previewed before the confirmed plan update
-[9/14] [mobile] › tests/web/host-ui.spec.ts:83:1 › reload resumes authoritative event state and drops stale confirmation UI
-[10/14] [mobile] › tests/web/host-ui.spec.ts:99:1 › interactive controls meet touch target floor and the page avoids document overflow
-[11/14] [mobile] › tests/web/voice-ui.spec.ts:97:1 › voice-only core journey reaches authoritative execution and receipts after one activation
+[5/14] [echo-show] › tests/web/voice-ui.spec.ts:129:1 › voice unavailability is explicit and leaves the complete touch path available
+[6/14] [echo-show] › tests/web/host-ui.spec.ts:83:1 › reload resumes authoritative event state and drops stale confirmation UI
+[7/14] [echo-show] › tests/web/host-ui.spec.ts:99:1 › interactive controls meet touch target floor and the page avoids document overflow
+[8/14] [mobile] › tests/web/host-ui.spec.ts:39:1 › complete core journey works through visible touch/action routes
+[9/14] [mobile] › tests/web/voice-ui.spec.ts:97:1 › voice-only core journey reaches authoritative execution and receipts after one activation
+[10/14] [mobile] › tests/web/host-ui.spec.ts:66:1 › late vegan guest is previewed before the confirmed plan update
+[11/14] [mobile] › tests/web/host-ui.spec.ts:83:1 › reload resumes authoritative event state and drops stale confirmation UI
 [12/14] [mobile] › tests/web/voice-ui.spec.ts:118:1 › spoken no cancels a pending material action without requiring touch confirmation
-  1) [echo-show] › tests/web/voice-ui.spec.ts:118:1 › spoken no cancels a pending material action without requiring touch confirmation 
-
-    Error: expect(received).toMatch(expected)
-
-    Expected pattern: /menu/i
-    Received string:  "I couldn't complete that safely, so I left the plan unchanged."
-
-    Call Log:
-    - Timeout 8000ms exceeded while waiting on the predicate
-
-      91 |   await page.evaluate((spokenText) => (window as any).__emitHostVoice(spokenText), text);
-      92 |   await expect.poll(() => spokenCount(page)).toBeGreaterThan(before);
-    > 93 |   await expect.poll(() => lastSpoken(page)).toMatch(expected);
-         |                                             ^
-      94 |   await expect(page.locator('[data-voice-status="listening"]')).toBeVisible();
-      95 | }
-      96 |
-        at say (/home/runner/work/host-alexa-event-execution-agent/host-alexa-event-execution-agent/tests/web/voice-ui.spec.ts:93:45)
-        at /home/runner/work/host-alexa-event-execution-agent/host-alexa-event-execution-agent/tests/web/voice-ui.spec.ts:126:3
-
-    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
-    test-results/voice-ui-spoken-no-cancels-fc15c-equiring-touch-confirmation-echo-show/test-failed-1.png
-    ────────────────────────────────────────────────────────────────────────────────────────────────
-
-    Error Context: test-results/voice-ui-spoken-no-cancels-fc15c-equiring-touch-confirmation-echo-show/error-context.md
-
-    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
-    test-results/voice-ui-spoken-no-cancels-fc15c-equiring-touch-confirmation-echo-show/trace.zip
-    Usage:
-
-        npx playwright show-trace test-results/voice-ui-spoken-no-cancels-fc15c-equiring-touch-confirmation-echo-show/trace.zip
-
-    ────────────────────────────────────────────────────────────────────────────────────────────────
-
-
-[13/14] [echo-show] › tests/web/voice-ui.spec.ts:129:1 › voice unavailability is explicit and leaves the complete touch path available
-  2) [mobile] › tests/web/voice-ui.spec.ts:118:1 › spoken no cancels a pending material action without requiring touch confirmation 
-
-    Error: expect(received).toMatch(expected)
-
-    Expected pattern: /menu/i
-    Received string:  "I couldn't complete that safely, so I left the plan unchanged."
-
-    Call Log:
-    - Timeout 8000ms exceeded while waiting on the predicate
-
-      91 |   await page.evaluate((spokenText) => (window as any).__emitHostVoice(spokenText), text);
-      92 |   await expect.poll(() => spokenCount(page)).toBeGreaterThan(before);
-    > 93 |   await expect.poll(() => lastSpoken(page)).toMatch(expected);
-         |                                             ^
-      94 |   await expect(page.locator('[data-voice-status="listening"]')).toBeVisible();
-      95 | }
-      96 |
-        at say (/home/runner/work/host-alexa-event-execution-agent/host-alexa-event-execution-agent/tests/web/voice-ui.spec.ts:93:45)
-        at /home/runner/work/host-alexa-event-execution-agent/host-alexa-event-execution-agent/tests/web/voice-ui.spec.ts:126:3
-
-    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
-    test-results/voice-ui-spoken-no-cancels-fc15c-equiring-touch-confirmation-mobile/test-failed-1.png
-    ────────────────────────────────────────────────────────────────────────────────────────────────
-
-    Error Context: test-results/voice-ui-spoken-no-cancels-fc15c-equiring-touch-confirmation-mobile/error-context.md
-
-    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
-    test-results/voice-ui-spoken-no-cancels-fc15c-equiring-touch-confirmation-mobile/trace.zip
-    Usage:
-
-        npx playwright show-trace test-results/voice-ui-spoken-no-cancels-fc15c-equiring-touch-confirmation-mobile/trace.zip
-
-    ────────────────────────────────────────────────────────────────────────────────────────────────
-
-
+[13/14] [mobile] › tests/web/host-ui.spec.ts:99:1 › interactive controls meet touch target floor and the page avoids document overflow
 [14/14] [mobile] › tests/web/voice-ui.spec.ts:129:1 › voice unavailability is explicit and leaves the complete touch path available
-  2 failed
-    [echo-show] › tests/web/voice-ui.spec.ts:118:1 › spoken no cancels a pending material action without requiring touch confirmation 
-    [mobile] › tests/web/voice-ui.spec.ts:118:1 › spoken no cancels a pending material action without requiring touch confirmation 
-  12 passed (19.5s)
+  14 passed (9.5s)
