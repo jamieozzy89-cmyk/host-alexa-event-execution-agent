@@ -58,7 +58,7 @@ test("complete core journey works through visible touch/action routes", async ({
   await expect(page.getByText(/Next:/)).toBeAttached();
 
   await page.getByRole("button", { name: "Activity" }).click();
-  await expect(page.getByRole("heading", { name: "Activity" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Activity", exact: true })).toBeVisible();
   await expect(page.getByText("Receipts and safe reversals")).toBeVisible();
   await expect(page.locator(".history-row").first()).toBeVisible();
 });
@@ -93,7 +93,7 @@ test("reload resumes authoritative event state and drops stale confirmation UI",
   await expect(page.locator(".surface-card").filter({ hasText: "Current plan" })).toContainText("6");
 
   await page.getByRole("button", { name: "Activity" }).click();
-  await expect(page.getByRole("heading", { name: "Activity" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Activity", exact: true })).toBeVisible();
 });
 
 test("interactive controls meet touch target floor and the page avoids document overflow", async ({ page }) => {
