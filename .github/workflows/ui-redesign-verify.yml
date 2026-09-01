@@ -19,8 +19,8 @@ jobs:
           set -euo pipefail
           gzip -dc .ui-redesign/styles.css.gz > web/styles.css
           test "$(git hash-object web/main.ts)" = "6415e826d0d6fa9f67f9c47a6d5cb414c5e26fe7"
-          test "$(git hash-object web/render.ts)" = "abb9a7aee41551407b88bc25ad49f7f8b64d2d8b"
-          test "$(git hash-object web/styles.css)" = "e72283db6e46984f746e6eaa680cf7d206dc3ae2"
+          test "$(git hash-object web/render.ts)" = "610f70ac7868209792625655c3125c629f59b218"
+          test "$(git hash-object web/styles.css)" = "8bbf0985ff39523574bc3657bb7c408490432c27"
       - name: Install dependencies and Chromium
         run: |
           npm ci --ignore-scripts
