@@ -1,6 +1,6 @@
 # Stage 10 — Controlled Submission Checklist
 
-Current status: Stage 09 product is published and verified; Stage 10 narrative, feedback, friction, video plan and real application screenshots are prepared; hosted deployment, final visual audit, public demo video and Devpost submission remain pending.
+Current status: Stage 09 product is published and verified; Stage 10 narrative, feedback, friction, visually audited gallery and uninterrupted real-app demo source run are prepared; final public demo video, Devpost entry and optional hosted deployment remain pending.
 
 ## A. Product/repository gate
 
@@ -69,19 +69,25 @@ Current status: Stage 09 product is published and verified; Stage 10 narrative, 
 - [x] Controlled shot list prepared.
 - [x] Reproducible Playwright capture script prepared.
 - [x] Capture hero event-state image from the real application.
-- [x] Capture menu/confirmation image from the real application.
+- [x] Capture menu/confirmation reserve image from the real application.
 - [x] Capture authoritative shopping image from the real application.
 - [x] Capture Live Mode image from the real application.
 - [x] Capture late-change impact image from the real application.
 - [x] Capture Activity receipts image from the real application.
 - [x] Capture one mobile Live image from the real application.
 - [x] Validate all seven captured files as PNGs with expected dimensions.
-- [x] Record URLs/captions/proposed order in `submission/GALLERY_INDEX_STAGE10.md`.
-- [ ] Capture a dedicated voice-state image only if visual review shows it adds more value than the current seven images.
-- [ ] Perform human/visual audit of every final image for legibility, clipping, transient UI and false-integration implications.
-- [ ] Lock strongest final gallery order/crops after visual audit.
+- [x] Export exact repository PNGs and inspect them directly at full resolution and as a contact sheet.
+- [x] Audit legibility, clipping, transient UI, simulation implications and thumbnail/story value.
+- [x] Lock final six-image gallery order in `submission/GALLERY_INDEX_STAGE10.md`.
+- [x] Keep menu confirmation as reserve rather than uploading a redundant seventh image.
+- [x] Dedicated voice-state image assessed as unnecessary for the current gallery; voice is better demonstrated in video/text than by an idle browser state.
+- [ ] Confirm Devpost's own thumbnail/crop rendering does not materially damage the locked images during actual upload.
 
-Successful gallery workflow: `33564617297`.
+Successful gallery capture workflow: `33564617297`.
+
+Successful gallery export/audit artifact workflow: `33569094876`.
+
+Locked order: Live Mode → late-change impact → Activity receipts → authoritative shopping → event created → mobile Live.
 
 ## G. Demo video
 
@@ -89,16 +95,25 @@ Successful gallery workflow: `33564617297`.
 - [x] Timing plan drafted.
 - [x] Core differentiating late-change sequence included.
 - [x] Simulation boundary included.
-- [x] Voice parity included.
+- [x] Voice parity included in the final narration/run plan.
 - [x] Activity/receipt proof included.
-- [ ] Record clean uninterrupted source run.
-- [ ] Edit to approximately 2:40–2:50.
+- [x] Record one clean uninterrupted source run from the real working application.
+- [x] Reverify `npm test` and production web build immediately before the source recording.
+- [x] Validate recorded WebM and preserve it as a downloadable workflow artifact.
+- [x] Confirm uninterrupted source runtime: **35.96 seconds**, 1280 × 800.
+- [x] Preserve a local MP4 conversion for review/editing.
+- [ ] Build/record the final narrated or otherwise self-explanatory public cut; the 35.96-second silent captioned run is source material, not yet the final submission video.
 - [ ] Confirm final runtime is under 3:00.
-- [ ] Confirm narration/text is English.
+- [ ] Confirm final narration/text is English.
 - [ ] Confirm no unlicensed music/footage/trademarks are used beyond permitted product references.
+- [ ] Demonstrate voice honestly in the final cut if shown; do not present deterministic test fakes as live microphone evidence.
 - [ ] Upload public to YouTube or Vimeo.
 - [ ] Watch final public stream end-to-end after platform processing.
 - [ ] Insert final URL into Devpost.
+
+Successful uninterrupted-source workflow: `33568858893`.
+
+Artifact: `host-stage10-demo-source-run` (GitHub Actions artifact id `9824201533`, retained for 30 days from 1 September 2026).
 
 ## H. Deployment
 
@@ -125,6 +140,6 @@ Successful gallery workflow: `33564617297`.
 - [ ] Verify all simulated-commerce language remains explicit.
 - [ ] Verify test counts quoted in submission match the final release evidence.
 - [ ] Verify screenshots/video show actual product behavior.
-- [ ] Remove or deliberately retain Stage 10 temporary capture workflow/trigger before merging permanent submission materials.
+- [ ] Remove or deliberately retain Stage 10 temporary capture/export/demo workflows and triggers before merging permanent submission materials.
 - [ ] Submit before deadline.
 - [ ] Reopen submitted project page and verify saved content/media after submission.
