@@ -1,0 +1,50 @@
+name: Stage 10 controlled package
+on:
+  push:
+    branches: [stage10-submission]
+    paths:
+      - '.stage10-package-trigger'
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: stage10-submission
+      - name: Verify current source
+        run: |
+          npm ci --ignore-scripts
+          npm test
+          npm run build:web
+          npm audit --omit=dev
+      - name: Assemble clean project package
+        shell: bash
+        run: |
+          set -euo pipefail
+          root=/tmp/HOST_ALEXA_STAGE10_CURRENT
+          mkdir -p "$root"
+          rsync -a ./ "$root/" \
+            --exclude='.git/' \
+            --exclude='node_modules/' \
+            --exclude='dist/' \
+            --exclude='dist-web/' \
+            --exclude='test-results/' \
+            --exclude='playwright-report/' \
+            --exclude='.github/workflows/stage10-*' \
+            --exclude='.stage10-*'
+          printf 'source_branch=stage10-submission\nsource_commit=%s\npackage_created_utc=%s\n' "$(git rev-parse HEAD)" "$(date -u +%FT%TZ)" > "$root/PACKAGE_PROVENANCE.txt"
+          find "$root" -maxdepth 3 -type f | sort > "$root/PACKAGE_FILE_LIST.txt"
+          cd /tmp
+          zip -qr HOST_ALEXA_STAGE10_CURRENT.zip HOST_ALEXA_STAGE10_CURRENT
+          sha256sum HOST_ALEXA_STAGE10_CURRENT.zip | tee HOST_ALEXA_STAGE10_CURRENT.zip.sha256
+      - name: Upload clean package
+        uses: actions/upload-artifact@v4
+        with:
+          name: host-stage10-current-clean-package
+          path: |
+            /tmp/HOST_ALEXA_STAGE10_CURRENT.zip
+            /tmp/HOST_ALEXA_STAGE10_CURRENT.zip.sha256
+          if-no-files-found: error
+          retention-days: 30
