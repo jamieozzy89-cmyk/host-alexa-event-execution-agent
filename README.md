@@ -1,3 +1,3 @@
-# Host Stage 09 development branch
+# Stage 09 branch frozen
 
-Frozen after successful hardening and clean-release verification. Public release state is controlled by the clean candidate commit and `main`.
+No further development-branch edits should be made. Use the verified clean release candidate for publication.
