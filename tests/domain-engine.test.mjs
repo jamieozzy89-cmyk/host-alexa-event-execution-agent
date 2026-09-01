@@ -268,3 +268,14 @@ test("adding a conflicting confirmed constraint cannot leave a committed menu in
   assert.equal(engine.snapshot().event.revision, state.event.revision);
   assert.equal(engine.snapshot().event.constraints.some((constraint) => constraint.id === impossible.id), false);
 });
+
+test("stale revision is rejected before task-state validation on mutation", () => {
+  const engine = newEngine();
+  let state = engine.commitMenu(baseMenu, 1, "2026-09-01T02:01:00.000Z");
+  state = engine.buildPreparationPlan(state.event.revision);
+  assert.equal(state.tasks["boil-pasta"]?.status, "blocked");
+  assert.throws(() => engine.markTaskComplete("boil-pasta", state.event.revision - 1), (error) => {
+    assert.ok(error instanceof StaleRevisionError);
+    return true;
+  });
+});
