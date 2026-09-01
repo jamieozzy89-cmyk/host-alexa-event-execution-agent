@@ -5,8 +5,8 @@
 **Project:** Host: Alexa+ Event Execution Agent  
 **Competition:** Build, Ship, Shape: Amazon Developer Hackathon 2026  
 **Primary track:** Alexa+ — simulated Alexa+ web experience  
-**Current accepted product stage:** Stage 06 — Alexa+ simulation UI  
-**Next controlled stage:** Stage 07 — voice interaction
+**Current accepted product stage:** Stage 07 — voice + touch interaction  
+**Next controlled stage:** Stage 08 — competition integration decision
 
 This handover travels with the full repository source. It records the governing product design, verified stage history, current boundaries, test evidence, unresolved work, and exact continuation point required to continue without relying on chat memory.
 
@@ -22,7 +22,26 @@ The product is differentiated by authoritative execution state rather than conve
 
 The central integrity rule is permanent:
 
-> Nothing becomes done because the language model or UI says it is done. Only validated application/tool state can establish completion.
+> Nothing becomes done because the language model, voice output, or UI says it is done. Only validated application/tool state can establish completion.
+
+## Competition controls relevant to continuation
+
+The entrant-supplied Devpost competition page is the controlling competition source for this project.
+
+Current route:
+
+- primary track: **Alexa+**;
+- allowed implementation route selected: **simulated Alexa+ experience in a web app**;
+- this route does not require a specific Alexa SDK/framework or AWS service;
+- public GitHub source, assets, run instructions and visible open-source licence are required for submission;
+- working simulation must be demonstrated in the final demo;
+- final public demo video must be under three minutes;
+- product/tool feedback and friction reporting are required/valuable submission assets;
+- one project may win one primary-track prize plus one mini-challenge prize.
+
+AWS Builder is optional and remains a Stage 08 decision. Do not add AWS merely to increase the technology list. Any AWS claim must correspond to a real, documented, verified integration that materially helps the product.
+
+The public MIT repository itself also leaves the project potentially eligible for the Open Source mini challenge, subject to the competition's final contribution/repository/description fields and final rules audit.
 
 ## Controlling architecture
 
@@ -30,13 +49,17 @@ The mutation path is:
 
 `user intent -> agent chooses controlled action/tool -> schema validation -> domain validation -> execution -> persistence -> audit/receipt -> customer response`
 
+Voice adds only a presentation/input adapter around that path:
+
+`recognized speech -> same HostAgentOrchestrator -> same controlled tool path -> same AgentReply -> speech synthesis`
+
 Forbidden path:
 
-`user intent -> generated text says an action happened -> UI/state assumes completion`
+`user intent / recognized speech -> generated text says an action happened -> UI/state assumes completion`
 
 The agent/orchestrator may interpret intent and choose tools. It cannot directly rewrite authoritative domain state.
 
-Material and transaction-like actions remain confirmation-gated.
+Material and transaction-like actions remain confirmation-gated regardless of whether the user interacts through touch, typed text or voice.
 
 ## Completed stages
 
@@ -72,11 +95,12 @@ Implemented and retained:
 - persisted authoritative events/tasks/receipts;
 - resume behavior across runtime restart/reload;
 - revision preservation;
+- checksum/schema validation and recovery behavior;
 - tests proving stored state survives reconstruction.
 
 ### Stage 04 — controlled tool layer
 
-The authoritative application mutation surface is the following 17 tools:
+The authoritative application mutation/read surface is the following 17 tools:
 
 1. `create_event`
 2. `update_event_constraints`
@@ -118,13 +142,13 @@ Implemented and retained:
 - customer-safe history;
 - resume without stale conversational confirmation state.
 
-No live LLM provider, AWS service, Bedrock integration, or API key is claimed at this stage.
+No live LLM provider, AWS service, Bedrock integration, or API key is claimed.
 
-Verified Stage 02–05 regression result: **72 passed, 0 failed**.
+Stage 02–05 regression at Stage 05 release: **72 passed, 0 failed**.
 
 ### Stage 06 — simulated Alexa+ touch UI
 
-Implemented and accepted:
+Implemented and retained:
 
 - Vite browser application;
 - persistent browser runtime using the verified application layer;
@@ -150,57 +174,116 @@ Implemented and accepted:
 
 #### Live Mode
 
-Live Mode deliberately presents one ready preparation task at a time with large controls. After a task completion it asks the orchestrator for the next authoritative action and visibly presents the returned guidance.
+Live Mode presents one ready preparation task at a time with large controls. After task completion it asks the orchestrator for the next authoritative action and visibly presents the returned guidance.
 
 #### Activity
 
-Activity requests history from the application layer and displays receipts so a user can distinguish what actually succeeded, failed, or was reversed.
+Activity requests history from the application layer and displays receipts so a user can distinguish what actually succeeded, failed or was reversed.
 
 #### Persistence
 
 The browser stores authoritative application state through `JsonStoragePersistenceAdapter` over `localStorage`. The active event id is remembered separately. Reload resumes the event through the orchestrator and does not recreate stale pending confirmation UI.
 
-## Stage 06 verification evidence
+Stage 06 final evidence:
 
-Final successful GitHub Actions workflow run: `33501409738`.
-
-Final Stage 06 browser result:
-
+- successful workflow run: `33501409738`;
 - backend regression: **72 passed, 0 failed**;
-- web TypeScript/build: **passed**;
+- production web build: passed;
 - Playwright acceptance: **8 passed, 0 failed**;
-- Echo Show-like project: 1280 × 800, touch enabled;
-- mobile project: 390 × 844, touch/mobile enabled;
-- UI boundary scan: **passed**.
+- Echo Show-like 1280 × 800 touch project;
+- mobile 390 × 844 touch/mobile project;
+- UI boundary scan passed.
 
-The four browser scenarios were each executed in both viewports:
+See `docs/ALEXA_SIMULATION_UI_STAGE06.md` and `reports/STAGE06_VERIFICATION.md`.
 
-1. complete visible-touch hosting journey;
-2. late vegan guest preview/confirmed change;
-3. authoritative reload/resume without stale confirmation;
-4. touch-target floor and overflow check.
+### Stage 07 — voice interaction
 
-See `reports/STAGE06_VERIFICATION.md` for the defect/fix history and exact acceptance record.
+Implemented and accepted in the isolated verified candidate:
 
-## Simulation boundaries
+- browser voice controller in `web/voice.ts`;
+- Web Speech recognition detection (`SpeechRecognition` / `webkitSpeechRecognition`);
+- speech synthesis (`SpeechSynthesisUtterance` / `speechSynthesis`);
+- explicit Start/Stop Voice control;
+- voice session states: `unavailable`, `idle`, `listening`, `processing`, `speaking`, `error`;
+- one user activation followed by repeated conversational voice turns;
+- recognised text routed through the same `HostAgentOrchestrator.handleText()` path as typed input;
+- spoken output uses the same authoritative `AgentReply.speech` produced by the application;
+- explicit touch/keyboard fallback when voice capabilities are unavailable or fail;
+- customer-safe permission/microphone/recognition/speech-output error wording;
+- no raw generic browser recognition error code in final customer-facing fallback;
+- no direct voice/UI domain mutation path.
 
-The following are currently simulations and must continue to be described truthfully:
+#### Voice-only menu selection
+
+Stage 07 adds the `choose_menu` intent and optional `menuIndex` slot.
+
+Menu proposal speech enumerates current options and tells the user to choose option one, two or three. Spoken menu selection resolves only against the current cached menu proposals and enters the existing `requestMenuCommit()` confirmation path.
+
+A spoken menu choice therefore does **not** commit a menu. The user must still confirm.
+
+#### Voice-only task completion
+
+When a user says `done`, `finished` or `complete`, the orchestrator re-reads current authoritative status and resolves the completion against `status.data.nextAction` before invoking `mark_task_complete`.
+
+This prevents the voice channel from guessing which visually displayed task was completed.
+
+#### Spoken confirmation/cancellation
+
+Existing Stage 05 confirmation logic is reused. Spoken yes/confirm/go-ahead invokes the same confirmation path. Spoken no/cancel leaves the pending action unapplied.
+
+During Stage 07 browser testing, cancellation correctly preserved uncommitted menu state but the later shopping request exposed a generic message for `MENU_REQUIRED`. The final build adds a specific recovery message telling the user to choose and confirm a menu before building shopping.
+
+#### Automated voice verification
+
+`tests/web/voice-ui.spec.ts` injects deterministic fake Web Speech recognition and synthesis objects into Chromium. The test still runs the actual Host browser controller, orchestrator, tools, persistence and domain state path.
+
+This verifies application integration and authoritative outcomes without depending on physical microphone acoustics or an external browser speech service.
+
+Final Stage 07 evidence:
+
+- final successful workflow run: `33552445789`;
+- Stage 02–07 backend/application suite: **74 passed, 0 failed**;
+- production web build: passed;
+- complete Playwright browser suite: **14 passed, 0 failed**;
+- boundary scan: passed.
+
+The 14 browser cases comprise:
+
+- eight retained Stage 06 touch cases;
+- six Stage 07 voice cases: three voice scenarios across both Echo Show-like and mobile projects.
+
+Voice scenarios:
+
+1. complete voice-only core journey after one activation through event, menu, confirmation, shopping, products, simulated checkout, prep, next action, task completion and receipt/history evidence;
+2. spoken `no` cancellation of a pending material menu change with correct authoritative state and recovery guidance;
+3. explicit voice-unavailable state with touch/keyboard path retained.
+
+See `docs/VOICE_INTERACTION_STAGE07.md` and `reports/STAGE07_VERIFICATION.md`.
+
+## Current simulation and capability boundaries
+
+The following are simulations and must continue to be described truthfully:
 
 - menu proposal source;
 - product catalogue/candidate selection;
 - cart/checkout transaction.
 
-The application does **not** currently perform:
+The browser voice channel uses Web Speech capability where available. It is not physical Alexa device integration.
+
+The application does **not** currently perform or claim:
 
 - real grocery/payment transactions;
 - real Amazon retail calls;
 - real calendar mutations;
 - real invitation sending;
 - physical Alexa device certification/integration;
+- Amazon partner-only Alexa/MCP tooling;
 - AWS/Bedrock calls;
-- live smart-home control.
+- live external LLM provider calls;
+- live smart-home control;
+- universal Web Speech browser/device support.
 
-The Alexa+ competition route is the allowed simulated web experience route. Do not claim unavailable MCP/Alexa partner tooling is integrated.
+The Alexa+ competition route is the allowed simulated web-experience route. Do not claim unavailable partner tooling is integrated.
 
 ## Current repository/runtime structure
 
@@ -210,11 +293,12 @@ The Alexa+ competition route is the allowed simulated web experience route. Do n
 - `src/agent/` — interpretation/orchestration/presentation;
 - `src/application/` — supported public application surface;
 - `src/simulated-services/` — deterministic demo adapters;
-- `web/` — Stage 06 simulated Alexa+ browser experience;
-- `tests/*.test.mjs` — Stage 02–05 regression suites;
-- `tests/web/` — Stage 06 Playwright acceptance suite;
+- `web/` — simulated Alexa+ browser experience and browser voice adapter;
+- `tests/*.test.mjs` — backend/application regressions;
+- `tests/web/` — touch and voice Playwright acceptance;
 - `docs/` — permanent architecture records;
-- `reports/` — permanent verification records.
+- `reports/` — permanent verification records;
+- `HANDOVER.md` — this self-contained continuation state.
 
 ## Local verification commands
 
@@ -236,52 +320,77 @@ Build the web application:
 npm run build:web
 ```
 
-Run the full Stage 06 browser suite on a machine with Playwright Chromium dependencies:
+Install Playwright Chromium and required system libraries:
 
 ```bash
 npx playwright install --with-deps chromium
+```
+
+Run all touch + voice browser acceptance tests:
+
+```bash
 npm run test:web
 ```
 
-Full Stage 06 verification command after browser dependencies are present:
+Run the full Stage 07 verification sequence after browser dependencies are installed:
 
 ```bash
-npm run verify:stage06
+npm run verify:stage07
 ```
 
-## Exact continuation point — Stage 07
+## Exact continuation point — Stage 08
 
-Stage 07 must add **voice interaction without bypassing any Stage 02–06 control**.
+Stage 07 is complete only after the clean release tree is independently reverified and published to `main`. After publication, Stage 08 is a competition-integration decision rather than an automatic feature-addition stage.
 
-Required outcome:
+### Primary question
 
-> The core Host journey can be driven and understood through the voice channel without depending on visual information, while touch remains an equivalent route.
+Determine whether a real AWS Builder mini-challenge integration adds enough customer/judging value to justify its complexity while preserving Host's primary Alexa+ product quality.
 
-The recommended controlled implementation boundary is a browser voice adapter around the existing `HostAgentOrchestrator`, not a second agent or second state engine.
+The decision must be based on current official competition/AWS sources and actual available access, not assumptions.
 
-Stage 07 work should include:
+### Required Stage 08 evaluation
 
-1. voice service/adapter contract separated from orchestration;
-2. browser speech-recognition adapter when available;
-3. browser speech-synthesis output when available;
-4. deterministic fake voice adapter for automated tests;
-5. voice-session state (`idle`, `listening`, `processing`, `speaking`, `unavailable/error`) that does not become authoritative event state;
-6. concise spoken rendering of agent responses/actions;
-7. confirmation handling that can be completed by spoken yes/no/cancel without screen dependence;
-8. next-action/task completion flow by voice;
-9. recovery when recognition is unavailable or fails;
-10. automated voice-only journey proving the same authoritative state transitions as the touch journey;
-11. retention of touch parity;
-12. no direct domain imports from the voice/UI layer.
+1. Re-read/verify the current AWS Builder mini-challenge requirements from the controlling competition page/current official sources.
+2. Identify candidate AWS integrations that improve Host itself rather than merely qualifying for a prize.
+3. Check current availability, account/access requirements, pricing/cost exposure, and implementation constraints before selecting anything.
+4. Compare each candidate against doing nothing: product value, technical evidence, demo clarity, reliability, privacy/security, development cost, and risk to the primary Alexa+ entry.
+5. Decide explicitly:
+   - integrate a specific AWS capability;
+   - or retain the stronger AWS-free Alexa+ build.
+6. If an AWS integration is selected, implement it behind a controlled adapter so the authoritative tool/state path remains unchanged and the non-AWS deterministic path can remain available where appropriate.
+7. Do not write `Built With`/AWS submission claims until the integration is genuinely implemented and verified.
 
-Do not add AWS merely to make Stage 07 work. AWS Builder mini-challenge integration remains a later explicit decision after the core Alexa+ experience is complete and only if it provides real product value.
+### Open Source mini challenge
 
-## Unresolved later work
+Because Host is a new public MIT repository, Stage 08 should also verify current Open Source mini-challenge eligibility and submission fields. If eligible, preserve the exact repository URL, GitHub username, contribution timeframe, and clear description of what was built/how/why for the eventual Devpost submission.
 
-After Stage 07, the controlled plan still contains:
+### Competition research controls
 
-- Stage 08 — competition/AWS Builder integration decision;
-- Stage 09 — hardening: accessibility, errors/recovery, demo regression, security/privacy, deployment/reproducibility, source/licence/provenance review;
-- Stage 10 — final Devpost submission assets, product/tool feedback, friction logs, gallery, demo script/video, and final submission audit.
+Use current official sources for time-sensitive competition/API/service claims. Distinguish verified requirements from recommendations. Do not assume partner-only Alexa tooling or AWS access exists.
+
+## Later controlled work
+
+After Stage 08:
+
+- **Stage 09 — hardening**
+  - actual-browser/manual microphone and permission compatibility;
+  - accessibility audit beyond automated minimums;
+  - error/recovery matrix;
+  - security/privacy review;
+  - persistence/reload and demo regression;
+  - deployment/reproducibility;
+  - source/licence/provenance review;
+  - current competition-requirements recheck.
+
+- **Stage 10 — submission artifacts**
+  - final Devpost story;
+  - truthful `Built With` list;
+  - public repository/run/deployment links;
+  - product/API/SDK feedback;
+  - feature requests if warranted;
+  - friction logs;
+  - gallery/screenshots;
+  - under-three-minute demo script/video;
+  - final submission audit against the controlling page.
 
 The Devpost `Built With` field, AWS claims, deployment links, screenshots and final submission prose must remain truthful to the actual verified build state.

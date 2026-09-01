@@ -89,6 +89,14 @@ export class HeuristicIntentInterpreter implements IntentInterpreter {
     if (/\b(?:shopping list|what (?:do )?i need to buy|make (?:the|my) shopping|build (?:the|my) shopping)\b/.test(lower)) return result("shopping", 0.96);
     if (/\b(?:find products|product choices|choose products|prepare (?:the )?cart|show products)\b/.test(lower)) return result("products", 0.96);
     if (/\b(?:prep plan|preparation plan|plan my prep|plan the prep|prep schedule|preparation schedule)\b/.test(lower)) return result("prep", 0.96);
+
+    if (context.hasEvent && context.hasMenuOptions && /\b(?:choose|pick|select|use)\b/.test(lower)) {
+      const numbered = lower.match(/\b(?:option|menu)?\s*(1|2|3)\b/);
+      const wordIndex = /\b(?:first|one)\b/.test(lower) ? 1 : /\b(?:second|two)\b/.test(lower) ? 2 : /\b(?:third|three)\b/.test(lower) ? 3 : undefined;
+      const menuIndex = numbered ? Number(numbered[1]) : wordIndex;
+      return result("choose_menu", 0.97, menuIndex ? { menuIndex } : {});
+    }
+
     if (/\b(?:menu|meal ideas|food ideas|what should we eat|show.*meals)\b/.test(lower)) return result("menu_options", 0.95);
 
     const changeSlots = baseSlots(trimmed);

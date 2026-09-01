@@ -9,6 +9,7 @@ const MESSAGES: Record<string, string> = {
   MENU_CONSTRAINT_CONFLICT: "That menu no longer fits the confirmed guest requirements.",
   MENU_SERVINGS_INSUFFICIENT: "That menu does not cover everyone on the current guest list.",
   NO_COMPATIBLE_MENU: "I couldn't find a menu that fits the confirmed requirements yet.",
+  MENU_REQUIRED: "There isn't a committed menu yet. Choose and confirm a menu first, then I can build the shopping list.",
   CART_NOT_READY: "The demo cart isn't ready yet. I need to finish the product choices first.",
   SIMULATED_CHECKOUT_FAILED: "The simulated checkout didn't go through. Nothing was marked as purchased.",
   SIMULATED_CHECKOUT_ADAPTER_ERROR: "The simulated checkout hit a temporary problem. Nothing was marked as purchased.",

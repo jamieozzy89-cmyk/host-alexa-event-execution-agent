@@ -1,7 +1,7 @@
 import type { Constraint, Menu, ShoppingItem, PreparationTask, ActionReceipt, AuditEvent } from "../domain/types.js";
 
 export type HostIntentKind =
-  | "create_event" | "status" | "next_action" | "menu_options" | "shopping" | "products"
+  | "create_event" | "status" | "next_action" | "menu_options" | "choose_menu" | "shopping" | "products"
   | "checkout" | "prep" | "history" | "change" | "mark_task_complete" | "undo"
   | "confirm" | "cancel" | "help" | "unknown";
 
@@ -16,6 +16,7 @@ export interface HostIntentSlots {
   constraints?: Constraint[];
   preferences?: string[];
   taskId?: string;
+  menuIndex?: number;
 }
 
 export interface InterpretedHostIntent { kind: HostIntentKind; confidence: number; slots: HostIntentSlots; }
@@ -26,6 +27,7 @@ export interface IntentContext {
   guestCount?: number;
   awaitingField?: "guestCount" | "startAt" | "budget";
   hasPendingConfirmation: boolean;
+  hasMenuOptions: boolean;
 }
 
 export interface IntentInterpreter {

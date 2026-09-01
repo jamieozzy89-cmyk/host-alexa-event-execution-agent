@@ -112,7 +112,7 @@ button:focus-visible, input:focus-visible, dialog:focus-visible, a:focus-visible
   border-radius: 18px;
   background: var(--bg-elevated);
 }
-.nav-button, .icon-button {
+.nav-button, .icon-button, .voice-button {
   min-width: var(--touch);
   min-height: var(--touch);
   border: 0;
@@ -122,9 +122,14 @@ button:focus-visible, input:focus-visible, dialog:focus-visible, a:focus-visible
   font-weight: 700;
 }
 .nav-button { padding: 0 17px; color: var(--text-soft); }
-.nav-button:hover, .icon-button:hover { background: var(--bg-soft); }
+.nav-button:hover, .icon-button:hover, .voice-button:hover:not(:disabled) { background: var(--bg-soft); }
 .nav-button.active { background: var(--bg-strong); color: var(--text); }
-.icon-button { justify-self: end; padding: 0 14px; border: 1px solid var(--line); }
+.icon-button { padding: 0 14px; border: 1px solid var(--line); }
+.header-actions { justify-self: end; min-width: 0; display: flex; align-items: center; gap: 8px; }
+.voice-button { min-height: var(--touch); padding: 0 15px; border: 1px solid var(--line); background: transparent; cursor: pointer; font-weight: 800; }
+.voice-button.active { background: var(--bg-strong); border-color: color-mix(in srgb, var(--ready) 40%, var(--line)); }
+.voice-button:disabled { opacity: 0.52; cursor: not-allowed; }
+.voice-state { max-width: 220px; color: var(--text-muted); font-size: 12px; line-height: 1.25; }
 
 .main-content { width: min(100%, var(--content-max)); margin: 0 auto; padding: var(--gap) var(--pad) 36px; }
 .plan-layout {
@@ -301,7 +306,8 @@ button:focus-visible, input:focus-visible, dialog:focus-visible, a:focus-visible
   .brand-subtitle { display: none; }
   .mode-nav { grid-column: 1 / -1; grid-row: 2; width: 100%; order: 3; }
   .nav-button { flex: 1 1 0; }
-  .icon-button { grid-column: 2; grid-row: 1; }
+  .header-actions { grid-column: 2; grid-row: 1; }
+  .voice-state { display: none; }
   .main-content { padding-top: 14px; }
   .plan-layout { grid-template-columns: 1fr; min-height: 0; }
   .conversation-panel { position: relative; top: auto; height: min(520px, 62vh); }

@@ -2,6 +2,17 @@ import type { AgentAction, AgentCard, AgentReply } from "../src/application/inde
 
 export type ViewMode = "conversation" | "live" | "activity";
 
+export type VoiceSessionStatus = "unavailable" | "idle" | "listening" | "processing" | "speaking" | "error";
+
+export interface VoiceUiState {
+  supported: boolean;
+  active: boolean;
+  status: VoiceSessionStatus;
+  message: string;
+  lastHeard?: string;
+  lastSpoken?: string;
+}
+
 export interface TranscriptEntry {
   id: string;
   role: "user" | "assistant";
@@ -25,6 +36,7 @@ export interface HostUiState {
   latest: LatestCards;
   mode: ViewMode;
   busy: boolean;
+  voice: VoiceUiState;
   expandedCard?: AgentCard;
   liveReply?: AgentReply;
   activityReply?: AgentReply;

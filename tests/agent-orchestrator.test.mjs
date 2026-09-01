@@ -64,6 +64,22 @@ test("menu request returns real proposals and working selection actions", async 
   assert.equal(result.actions.filter((action) => action.type === "choose_menu").length, 3);
 });
 
+test("spoken menu option choice uses the existing confirmation-gated commit path", async () => {
+  const { agent, persistence } = makeAgent();
+  await createEvent(agent, "voice-menu");
+  const menus = await agent.handleText("voice-menu", "menu ideas");
+  assert.match(menus.speech, /Option 1:/);
+  assert.match(menus.speech, /choose option one/i);
+  const confirmation = await agent.handleText("voice-menu", "choose option one");
+  assert.equal(confirmation.status, "needs_confirmation");
+  let loaded = await persistence.load("agent-dinner");
+  assert.equal(loaded?.state.event.selectedMenuId, undefined);
+  const confirmed = await agent.handleText("voice-menu", "yes");
+  assert.equal(confirmed.status, "ok");
+  loaded = await persistence.load("agent-dinner");
+  assert.ok(loaded?.state.event.selectedMenuId);
+});
+
 test("menu selection is confirmation-gated before committed state changes", async () => {
   const { agent, persistence } = makeAgent();
   await createEvent(agent);
@@ -148,6 +164,20 @@ test("touch action can complete a real prep task and advance next-action guidanc
   assert.equal(result.status, "ok");
   const loaded = await persistence.load("agent-dinner");
   assert.equal(loaded?.state.tasks[action.taskId]?.status, "done");
+});
+
+test("spoken done completes the authoritative next preparation task", async () => {
+  const { agent, persistence } = makeAgent();
+  await setupCommitted(agent, "voice-done");
+  await agent.handleText("voice-done", "prep plan");
+  const next = await agent.handleText("voice-done", "what's next");
+  assert.match(next.speech, /Next:/);
+  const nextTaskId = next.actions.find((action) => action.type === "complete_task")?.taskId;
+  assert.ok(nextTaskId);
+  const completed = await agent.handleText("voice-done", "done");
+  assert.equal(completed.status, "ok");
+  const loaded = await persistence.load("agent-dinner");
+  assert.equal(loaded?.state.tasks[nextTaskId]?.status, "done");
 });
 
 test("status response is derived from authoritative tool state and stays concise", async () => {
