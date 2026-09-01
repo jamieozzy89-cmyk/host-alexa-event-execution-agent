@@ -5,9 +5,9 @@
 **Project:** Host: Alexa+ Event Execution Agent  
 **Competition:** Build, Ship, Shape: Amazon Developer Hackathon 2026  
 **Primary track:** Alexa+ — simulated Alexa+ web experience  
-**Current accepted product stage:** Stage 07 — voice + touch interaction  
-**Current competition decision stage:** Stage 08 — Open Source locked; AWS Builder deliberately deferred for now
-**Next executable product stage:** Stage 09 — hardening
+**Current accepted product stage:** Stage 09 — hardened voice + touch product (deployment pending)
+**Competition decision:** Open Source selected; AWS Builder deliberately deferred for now
+**Next controlled action:** obtain a real hosted deployment and smoke-test it; then Stage 10 submission artifacts
 
 This handover travels with the full repository source. It records the governing product design, verified stage history, current boundaries, test evidence, unresolved work, and exact continuation point required to continue without relying on chat memory.
 
@@ -322,6 +322,99 @@ If the user later chooses to connect AWS securely to the project environment, im
 
 For now, Stage 08 is complete as a controlled decision: retain the verified Stage 07 Alexa+ product, enter Open Source, do **not** claim AWS Builder yet, and proceed directly to Stage 09 hardening.
 
+## Stage 09 — competition hardening
+
+Stage 09 hardening has been implemented and verified on the isolated `stage09-hardening` branch without changing the authoritative execution architecture.
+
+### Accessibility / UX controls
+
+Implemented and verified:
+
+- composer focus returns after async typed submission;
+- Live/Activity mode changes focus their contextual heading;
+- material-action rerenders retain a useful focus context;
+- expanded shopping detail uses labelled modal-dialog semantics;
+- dialog opening focuses Close and closing returns focus to the opener;
+- scrollable conversation log is keyboard-focusable;
+- the full transcript is no longer an `aria-live` region;
+- a separate visually hidden polite status node announces only the latest assistant/status message;
+- voice-unavailable state remains keyboard reachable with `aria-disabled`;
+- existing 48 × 48 touch-target and responsive controls remain tested.
+
+Axe Playwright 4.13.0 checks representative states against WCAG A/AA rule tags. Automated Axe success is not represented as complete manual accessibility certification.
+
+### Privacy / storage controls
+
+Implemented and verified:
+
+- Data & privacy UI explains browser-local event storage;
+- the current deterministic Host core journey does not send plan data to a Host application backend;
+- browser/platform speech recognition is explicitly disclosed as potentially using a browser/platform service;
+- Host does not claim to store speech audio;
+- Host event data can be deleted from the UI through a confirmation step;
+- deletion is scoped to active-event/event-snapshot keys and preserves the tested theme preference;
+- blocked browser storage falls back to an explicit in-memory-only mode;
+- corrupt unrecoverable event snapshots are preserved, the active pointer is removed, and a visible recovery message returns the user to a usable fresh planning state.
+
+### Security / boundary controls
+
+Verified release scans reject:
+
+- `.innerHTML`;
+- `insertAdjacentHTML`;
+- `document.write`;
+- direct `HostDomainEngine` / `validateHostState` use from the web layer;
+- direct browser imports from domain/persistence/tool internals.
+
+`npm audit --omit=dev` reports zero production dependency vulnerabilities at the verified gate.
+
+A browser test also observes the deterministic event/menu/shopping/product journey and rejects unexpected cross-origin application requests. This does not claim browser/vendor speech-recognition networking is local; that boundary is disclosed separately.
+
+### Reproducibility
+
+Stage 09 corrected two issues found only during source audit after functional tests passed:
+
+- package/lock root versions are aligned at `0.9.0`;
+- Node engine floor is `>=22.12.0`, matching the pinned Vite 8 build requirement on the Node 22 line.
+
+The Vite static build now uses relative `./` asset paths for provider-independent root/subpath hosting.
+
+### Verification evidence
+
+Hardening functional workflow: `33557794389`.
+
+Reproducibility correction workflow: `33558676755`.
+
+Portable static-base requalification workflow: `33559155046`.
+
+Final Stage 09 product gate after the portable-base change:
+
+- backend/application tests: **74 passed, 0 failed**;
+- production web build: passed;
+- complete Playwright browser suite: **26 passed, 0 failed**;
+- Axe representative WCAG A/AA checks: passed;
+- production dependency audit: zero vulnerabilities;
+- web injection/direct-domain boundary scans: passed.
+
+See `docs/HARDENING_STAGE09.md` and `reports/STAGE09_VERIFICATION.md`.
+
+### Source/licence/provenance observations
+
+The public repository remains MIT licensed. The browser application has no declared third-party runtime dependency. The current TypeScript, Vite, Playwright and Axe packages are build/test development dependencies, not claimed Alexa/AWS runtime integrations.
+
+### Competition recheck
+
+Official Devpost rules were rechecked on 1 September 2026. The simulated Alexa+ web route remains explicitly valid; public source/setup remains required; the public English demo video remains under three minutes; Open Source evidence requirements remain the contribution URL, repository URL, GitHub username and what/how/why description; friction logs can still add up to a 10% judging bonus.
+
+### Deployment status — unresolved external item
+
+The current build is deployment-ready but **no hosted URL is yet verified**.
+
+- Vercel is connected, but the chat deployment wrapper's backend requires target/name/files while its exposed schema provides no way to supply those arguments.
+- GitHub Pages is disabled; first-time enablement through `configure-pages` requires a token other than normal `GITHUB_TOKEN` with administration/pages permissions, which is not available here.
+
+Do not invent or list a deployment URL. The exact production build can be recreated with `npm ci && npm run build:web`, and the build is path-portable, but deployment must be completed through a working hosting-control path and then smoke-tested before being called done.
+
 ## Current simulation and capability boundaries
 
 The following are simulations and must continue to be described truthfully:
@@ -366,7 +459,7 @@ The Alexa+ competition route is the allowed simulated web-experience route. Do n
 
 Requirements:
 
-- Node.js 22+
+- Node.js 22.12+
 - npm
 
 Install and verify backend/application layers:
@@ -394,29 +487,36 @@ Run all touch + voice browser acceptance tests:
 npm run test:web
 ```
 
-Run the full Stage 07 verification sequence after browser dependencies are installed:
+Run the full Stage 09 verification sequence after browser dependencies are installed:
 
 ```bash
-npm run verify:stage07
+npm run verify:stage09
 ```
 
 ## Exact continuation point
 
-Stage 08's decision is recorded above. The AWS account exists, but integration is deliberately deferred by the user for now. Proceed to Stage 09 hardening with the verified Stage 07 runtime and Open Source mini entry. Do not claim AWS Builder unless the deferred Bedrock + AgentCore Memory integration is later implemented and verified.
+Stage 09 hardening functionality is verified. The only unresolved Stage 09 item is a **real hosted deployment plus smoke test**.
+
+Continue in this order:
+
+1. use a hosting path that can receive the exact verified repository/build artifact;
+2. deploy the Stage 09 release candidate without rebuilding a different product;
+3. smoke-test load, Plan, Live, Activity, local persistence/reload, touch actions and voice fallback on the hosted URL;
+4. record the exact hosted URL/provider/deployment evidence in the verification report and README;
+5. only then call Stage 09 fully closed.
+
+If hosting remains externally blocked, keep that item explicit and do not fabricate a URL. Stage 10 submission drafting may proceed with the deployment field marked pending, but final submission must follow the then-current competition accessibility/testing requirements.
+
+AWS Builder remains deferred unless the user later explicitly resumes the Bedrock + AgentCore Memory path.
 
 ## Later controlled work
 
-After Stage 08:
+Remaining controlled work:
 
-- **Stage 09 — hardening**
-  - actual-browser/manual microphone and permission compatibility;
-  - accessibility audit beyond automated minimums;
-  - error/recovery matrix;
-  - security/privacy review;
-  - persistence/reload and demo regression;
-  - deployment/reproducibility;
-  - source/licence/provenance review;
-  - current competition-requirements recheck.
+- **Stage 09 — deployment closure**
+  - real hosted deployment;
+  - hosted smoke test;
+  - update deployment evidence.
 
 - **Stage 10 — submission artifacts**
   - final Devpost story;

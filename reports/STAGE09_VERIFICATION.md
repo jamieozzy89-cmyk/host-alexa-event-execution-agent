@@ -157,7 +157,7 @@ The source audit also identified that the Vite build used the default root-relat
 
 Stage 09 changes Vite `base` to `./` so static assets are referenced relative to `index.html`.
 
-This change is requalified through the same full Stage 09 test/security gate before release. The corresponding final workflow/run must be recorded before the clean release is called complete.
+This change was requalified through the same full Stage 09 test/security gate. Successful portable-base workflow: `33559155046`.
 
 ## Frozen pre-portable deployment build
 
@@ -208,8 +208,8 @@ The Stage 09 build is being made path-portable and reproducible, but a public ho
 
 ## Completion boundary
 
-Stage 09 hardening functionality is accepted only after the portable-base requalification succeeds.
+The portable-base requalification succeeded. Stage 09 hardening functionality is therefore verified.
 
 Stage 09 as a whole retains one unresolved external item until a hosted deployment can be created and smoke-tested: **deployment**.
 
-This report must be updated with the portable-base workflow result and any eventual hosted deployment URL/evidence before claiming complete Stage 09 closure.
+This report now records the portable-base success. It still must be updated with an eventual hosted deployment URL/evidence before claiming complete Stage 09 closure.
