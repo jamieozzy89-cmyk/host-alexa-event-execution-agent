@@ -1,0 +1,39 @@
+name: Stage 05 final recovery verification
+on:
+  push:
+    branches: [stage05-rebuild]
+    paths:
+      - '.stage05-final-trigger'
+permissions:
+  contents: write
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply audited recovery patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(sha256sum .stage05-final.patch | awk '{print $1}')" = "93cb0392371d03b09c3ca3623d83ad53b64a4de87735b26f868787981b01f6ce"
+          git apply --check .stage05-final.patch
+          git apply .stage05-final.patch
+          git diff --check
+      - name: Install declared build dependency
+        run: npm install --ignore-scripts
+      - name: Verify complete Host suite
+        run: npm test
+      - name: Audit Stage 05 boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! grep -RInE 'TODO|FIXME|HACK|HostDomainEngine|validateHostState' src/agent
+      - name: Commit verified Stage 05 recovery
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json src/agent src/application/index.ts tests/agent-fixtures.mjs tests/agent-orchestrator.test.mjs
+          git commit -m "Finalize verified Stage 05 agent recovery"
+          git push origin HEAD:stage05-rebuild
