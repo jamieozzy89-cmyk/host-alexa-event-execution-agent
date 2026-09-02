@@ -18,10 +18,11 @@ jobs:
         run: |
           npm ci --ignore-scripts
           npx playwright install --with-deps chromium
-      - name: Reverify application and build
+      - name: Reverify application, build and browser gate
         run: |
           npm test
           npm run build:web
+          npx playwright test
       - name: Start verified static preview
         shell: bash
         run: |
