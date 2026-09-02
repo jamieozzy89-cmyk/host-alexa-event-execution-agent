@@ -28,3 +28,4 @@ jobs:
           fi
           git commit -m "Materialize editorial UI redesign stylesheet"
           git push origin HEAD:ui-redesign-editorial
+# retrigger after binary artifact repair
