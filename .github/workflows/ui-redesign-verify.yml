@@ -141,6 +141,8 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git restore --worktree --staged submission/screenshots 2>/dev/null || true
+          git clean -fd submission/screenshots
           git add web/render.ts web/styles.css tests/web/host-ui.spec.ts submission/capture-stage10.mjs
           git commit -m "Verify editorial Host UI redesign corrections"
           git pull --rebase origin ui-redesign-editorial
