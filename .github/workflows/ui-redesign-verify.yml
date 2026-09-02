@@ -30,11 +30,16 @@ jobs:
 
           render = Path('web/render.ts')
           text = render.read_text()
-          old = '  wrap.classList.add("event-card");\n'
-          new = '  wrap.classList.add("event-card");\n  wrap.setAttribute("aria-label", "Authoritative event summary");\n'
-          if text.count(old) != 1:
-              raise SystemExit('event-card insertion point was not unique')
-          render.write_text(text.replace(old, new, 1))
+          hooks = {
+              '  wrap.classList.add("event-card");\n': '  wrap.classList.add("event-card");\n  wrap.setAttribute("aria-label", "Authoritative event summary");\n',
+              '  wrap.classList.add("shopping-card");\n': '  wrap.classList.add("shopping-card");\n  wrap.setAttribute("aria-label", "Authoritative shopping list");\n',
+              '  wrap.classList.add(live ? "live-prep-card" : "prep-card");\n': '  wrap.classList.add(live ? "live-prep-card" : "prep-card");\n  wrap.setAttribute("aria-label", live ? "Live preparation" : "Preparation plan");\n',
+          }
+          for old, new in hooks.items():
+              if text.count(old) != 1:
+                  raise SystemExit(f'render hook insertion point was not unique: {old}')
+              text = text.replace(old, new, 1)
+          render.write_text(text)
 
           css = Path('web/styles.css')
           text = css.read_text()
@@ -54,14 +59,32 @@ jobs:
           if text.count(old) != 2:
               raise SystemExit('expected exactly two obsolete event-summary selectors')
           text = text.replace(old, 'page.getByRole("article", { name: "Authoritative event summary" })')
+
+          old = '  await expect(page.getByText("Dependency-aware plan")).toBeVisible();\n'
+          new = '  await expect(page.getByRole("article", { name: "Preparation plan" })).toBeVisible();\n'
+          if text.count(old) != 1:
+              raise SystemExit('obsolete preparation wording assertion was not unique')
+          text = text.replace(old, new, 1)
+
+          old = '  await expect(page.getByText("Authoritative quantities")).toBeVisible();\n'
+          new = '  const shopping = page.getByRole("article", { name: "Authoritative shopping list" });\n  await expect(shopping).toBeVisible();\n  await expect(shopping).toContainText("to buy");\n  await expect(shopping).toContainText("on hand");\n'
+          if text.count(old) != 1:
+              raise SystemExit('obsolete shopping wording assertion was not unique')
+          text = text.replace(old, new, 1)
           spec.write_text(text)
           PY
 
           grep -F 'Tonight at a glance' web/render.ts
           grep -F 'aria-label", "Authoritative event summary' web/render.ts
+          grep -F 'aria-label", "Authoritative shopping list' web/render.ts
+          grep -F '"Preparation plan"' web/render.ts
           ! grep -F 'HTMKElement' web/render.ts
           ! grep -F 'Current plan' tests/web/host-ui.spec.ts
+          ! grep -F 'Authoritative quantities' tests/web/host-ui.spec.ts
+          ! grep -F 'Dependency-aware plan' tests/web/host-ui.spec.ts
           grep -F 'Authoritative event summary' tests/web/host-ui.spec.ts
+          grep -F 'Authoritative shopping list' tests/web/host-ui.spec.ts
+          grep -F 'Preparation plan' tests/web/host-ui.spec.ts
           grep -F -- '--ink-muted: #696c63;' web/styles.css
           grep -F -- '--tomato: #a84433;' web/styles.css
       - name: Install dependencies and Chromium
