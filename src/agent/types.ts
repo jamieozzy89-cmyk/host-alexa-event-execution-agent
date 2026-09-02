@@ -1,5 +1,6 @@
 import type { Constraint, Menu, ShoppingItem, PreparationTask, ActionReceipt, AuditEvent } from "../domain/types.js";
-import type { AttentionContext, OperatingProjection } from "../application/event-operating-state.js";
+import type { OperatingProjection } from "../application/event-operating-state.js";
+import type { AttentionContext } from "../application/attention.js";
 
 export type HostIntentKind =
   | "create_event" | "status" | "next_action" | "menu_options" | "choose_menu" | "shopping" | "products"
