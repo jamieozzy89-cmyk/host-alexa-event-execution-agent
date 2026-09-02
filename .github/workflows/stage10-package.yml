@@ -1,7 +1,7 @@
 name: Stage 10 controlled package
 on:
   push:
-    branches: [stage10-submission]
+    branches: [main]
     paths:
       - '.stage10-package-trigger'
 permissions:
@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: stage10-submission
+          ref: main
       - name: Verify current source
         run: |
           npm ci --ignore-scripts
@@ -34,7 +34,7 @@ jobs:
             --exclude='playwright-report/' \
             --exclude='.github/workflows/stage10-*' \
             --exclude='.stage10-*'
-          printf 'source_branch=stage10-submission\nsource_commit=%s\npackage_created_utc=%s\n' "$(git rev-parse HEAD)" "$(date -u +%FT%TZ)" > "$root/PACKAGE_PROVENANCE.txt"
+          printf 'source_branch=main\nsource_commit=%s\npackage_created_utc=%s\n' "$(git rev-parse HEAD)" "$(date -u +%FT%TZ)" > "$root/PACKAGE_PROVENANCE.txt"
           find "$root" -maxdepth 3 -type f | sort > "$root/PACKAGE_FILE_LIST.txt"
           cd /tmp
           zip -qr HOST_ALEXA_STAGE10_CURRENT.zip HOST_ALEXA_STAGE10_CURRENT
