@@ -59,6 +59,22 @@ export type {
 } from "./attention.js";
 
 export { HostAgentOrchestrator } from "../agent/orchestrator.js";
+export { GoalDirectedHostAgentOrchestrator } from "../agent/goal-orchestrator.js";
+export { planLowRiskWorkflow, runLowRiskWorkflow } from "../agent/workflow.js";
+export type {
+  AutomaticWorkflowTool,
+  WorkflowExecutionRecord,
+  WorkflowGoal,
+  WorkflowPlan,
+  WorkflowPolicyContext,
+  WorkflowProjectionReader,
+  WorkflowRequiredInput,
+  WorkflowRunResult,
+  WorkflowRunnerOptions,
+  WorkflowStep,
+  WorkflowStopReason,
+  WorkflowToolExecutor,
+} from "../agent/workflow.js";
 export { HeuristicIntentInterpreter, constraintsFromText } from "../agent/interpreter.js";
 export { JsonModelProxyAdapter, ModelBackedIntentInterpreter, ResilientIntentInterpreter } from "../agent/model.js";
 export type {
@@ -73,5 +89,6 @@ export type {
   IntentContext,
   IntentInterpreter,
   InterpretedHostIntent,
+  OperatingProjectionReader,
   StructuredIntentModel,
 } from "../agent/types.js";
