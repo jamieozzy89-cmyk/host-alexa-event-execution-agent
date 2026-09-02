@@ -18,15 +18,20 @@ async function send(page: Page, text: string): Promise<void> {
 
 async function createEvent(page: Page): Promise<void> {
   await send(page, PRIMARY_REQUEST);
-  await expect(page.getByRole("button", { name: "Show menu ideas" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Choose this menu" }).first()).toBeVisible();
 }
 
 async function commitFirstMenu(page: Page): Promise<void> {
-  await page.getByRole("button", { name: "Show menu ideas" }).click();
   await page.getByRole("button", { name: "Choose this menu" }).first().click();
   await expect(page.getByText("Your confirmation is required")).toBeVisible();
   await page.getByRole("button", { name: "Confirm" }).click();
-  await expect(page.getByRole("button", { name: "Build shopping list" })).toBeVisible();
+  await expect(page.getByLabel("Host conversation").getByText(/What required ingredients do you already have/i)).toBeVisible();
+}
+
+async function completeInventoryReview(page: Page): Promise<void> {
+  await send(page, "I don't have any of them");
+  await expect(page.getByRole("article", { name: "Authoritative shopping list" })).toBeVisible();
+  await expect(page.getByRole("article", { name: "Preparation plan" })).toBeVisible();
 }
 
 async function expectWcagAa(page: Page): Promise<void> {
@@ -36,16 +41,24 @@ async function expectWcagAa(page: Page): Promise<void> {
   expect(result.violations, result.violations.map((violation) => `${violation.id}: ${violation.help}`).join("\n")).toEqual([]);
 }
 
-test("core surfaces pass automated WCAG A and AA checks", async ({ page }) => {
+test("core Phase C surfaces pass automated WCAG A and AA checks", async ({ page }) => {
   await openClean(page);
   await expectWcagAa(page);
+
   await createEvent(page);
-  await page.getByRole("button", { name: "Show menu ideas" }).click();
   await expectWcagAa(page);
+
   await page.getByRole("button", { name: "Choose this menu" }).first().click();
   await expect(page.getByText("Your confirmation is required")).toBeVisible();
   await expectWcagAa(page);
-  await page.getByRole("button", { name: "Cancel" }).click();
+
+  await page.getByRole("button", { name: "Confirm" }).click();
+  await expect(page.getByLabel("Host conversation").getByText(/What required ingredients do you already have/i)).toBeVisible();
+  await expectWcagAa(page);
+
+  await completeInventoryReview(page);
+  await expectWcagAa(page);
+
   await page.getByRole("button", { name: "Activity" }).click();
   await expectWcagAa(page);
 });
@@ -56,13 +69,16 @@ test("keyboard focus remains usable after composer and dialog operations", async
   await composer.focus();
   await composer.fill(PRIMARY_REQUEST);
   await page.keyboard.press("Enter");
-  await expect(page.getByRole("button", { name: "Show menu ideas" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Choose this menu" }).first()).toBeVisible();
   await expect(composer).toBeFocused();
 
-  await page.getByRole("button", { name: "Show menu ideas" }).click();
   await page.getByRole("button", { name: "Choose this menu" }).first().click();
   await page.getByRole("button", { name: "Confirm" }).click();
-  await page.getByRole("button", { name: "Build shopping list" }).click();
+  await expect(page.getByLabel("Host conversation").getByText(/What required ingredients do you already have/i)).toBeVisible();
+  await composer.fill("I don't have any of them");
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("article", { name: "Authoritative shopping list" })).toBeVisible();
+
   const openDialog = page.getByRole("button", { name: /View all .* items/ });
   await openDialog.focus();
   await openDialog.click();
@@ -123,7 +139,7 @@ test("local Host event data can be reviewed, cancelled, then deleted without cle
   expect(await page.evaluate(() => window.localStorage.getItem("host:ui:theme"))).toBe(themeBefore);
 });
 
-test("current deterministic Host journey makes no unexpected cross-origin application requests", async ({ page }) => {
+test("current deterministic Phase C journey makes no unexpected cross-origin application requests", async ({ page }) => {
   const external = new Set<string>();
   page.on("request", (request) => {
     const url = new URL(request.url());
@@ -132,7 +148,7 @@ test("current deterministic Host journey makes no unexpected cross-origin applic
   await openClean(page);
   await createEvent(page);
   await commitFirstMenu(page);
-  await page.getByRole("button", { name: "Build shopping list" }).click();
-  await page.getByRole("button", { name: "Find demo products" }).click();
+  await completeInventoryReview(page);
+  await page.getByRole("button", { name: "Review demo products" }).click();
   expect([...external]).toEqual([]);
 });
