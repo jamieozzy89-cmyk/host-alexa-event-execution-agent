@@ -1,0 +1,191 @@
+/*
+ * Host editorial refinement pass.
+ *
+ * This layer intentionally changes presentation only. The verified DOM,
+ * semantic labels, execution state, confirmation boundaries and action model
+ * remain owned by the existing application code.
+ */
+
+@media (min-width: 1051px) {
+  .plan-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(286px, 330px);
+    gap: clamp(34px, 4vw, 56px);
+  }
+
+  .conversation-panel {
+    height: calc(100vh - 136px);
+  }
+}
+
+/* Keep conversation available, but make the authoritative workspace primary. */
+.conversation-panel {
+  border-left-color: color-mix(in srgb, var(--ink) 22%, transparent);
+}
+
+.section-kicker {
+  padding-bottom: 16px;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+}
+
+.message {
+  margin-bottom: 16px;
+}
+
+.message-text {
+  font-size: clamp(13px, 0.98vw, 15px);
+  line-height: 1.52;
+}
+
+.message.user .message-text {
+  padding: 8px 10px;
+  background: color-mix(in srgb, var(--paper-3) 64%, transparent);
+}
+
+.composer {
+  gap: 7px;
+  padding-top: 14px;
+}
+
+.composer-input {
+  background: color-mix(in srgb, var(--paper-2) 88%, var(--paper));
+}
+
+/* Make voice state read as an instrument status rather than loose helper copy. */
+.voice-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.voice-state::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  flex: 0 0 6px;
+  border-radius: 50%;
+  background: var(--sage);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--sage) 55%, transparent);
+}
+
+.voice-button[aria-disabled="true"] + .voice-state::before {
+  background: var(--ink-muted);
+  box-shadow: none;
+}
+
+.voice-button.active + .voice-state::before {
+  background: var(--tomato);
+}
+
+/* Text states and numeric states should not compete at the same display size. */
+.impact-card .stat-value {
+  font-size: clamp(27px, 2.65vw, 38px);
+  letter-spacing: -0.025em;
+}
+
+/* Live Mode: one coherent kitchen surface, with the task as the visual centre. */
+.live-view {
+  background: #171916;
+  border-top: 4px solid #d76851;
+}
+
+.live-view .mode-heading {
+  max-width: 760px;
+  margin-bottom: 28px;
+}
+
+.live-view .mode-title {
+  font-size: clamp(54px, 6.6vw, 92px);
+}
+
+.live-status {
+  max-width: 1000px;
+  margin: 0 0 24px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid var(--line-strong);
+}
+
+.live-task-list {
+  border-top: 0;
+}
+
+.live-task {
+  min-height: 330px;
+  padding: clamp(26px, 4vw, 54px) 0;
+}
+
+.live-task-title {
+  max-width: 920px;
+  margin: 6px 0 28px;
+  font-size: clamp(48px, 6.2vw, 88px);
+}
+
+.live-task .task-meta {
+  letter-spacing: 0.1em;
+}
+
+.live-complete {
+  min-width: 240px;
+}
+
+/* Activity is evidence-first: preserve the masthead, expose more receipts. */
+.activity-view {
+  padding-top: clamp(24px, 3vw, 48px);
+}
+
+.activity-view .mode-heading {
+  max-width: 760px;
+  margin-bottom: 34px;
+}
+
+.activity-view .mode-title {
+  font-size: clamp(50px, 6vw, 86px);
+}
+
+.activity-view .mode-copy {
+  max-width: 620px;
+}
+
+.activity-view .history-card {
+  max-width: 980px;
+}
+
+@media (max-width: 760px) {
+  .activity-view .mode-heading {
+    margin-bottom: 28px;
+  }
+}
+
+@media (max-width: 520px) {
+  .live-view {
+    border-top-width: 3px;
+  }
+
+  .live-view .mode-heading {
+    margin-bottom: 24px;
+  }
+
+  .live-view .mode-title {
+    font-size: clamp(46px, 15vw, 64px);
+  }
+
+  .live-status {
+    margin-bottom: 20px;
+    padding-bottom: 18px;
+    font-size: clamp(18px, 5.5vw, 23px);
+  }
+
+  .live-task {
+    min-height: 330px;
+    padding: 24px 0;
+  }
+
+  .live-task-title {
+    margin-bottom: 24px;
+    font-size: clamp(44px, 14vw, 62px);
+  }
+
+  .activity-view {
+    padding-top: 24px;
+  }
+}
