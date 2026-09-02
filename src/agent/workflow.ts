@@ -15,11 +15,19 @@ export type WorkflowStopReason =
   | "change_review"
   | "failure"
   | "stale_revision_limit"
+  | "step_limit"
   | "no_low_risk_work";
 
 export interface WorkflowRequiredInput {
   field: "inventory_review";
   prompt: string;
+}
+
+export interface WorkflowConfirmationBoundary {
+  kind: "explicit_customer_confirmation";
+  title: string;
+  detail: string;
+  relatedId?: string;
 }
 
 export interface WorkflowStep {
@@ -31,18 +39,27 @@ export interface WorkflowStep {
 export interface WorkflowExecutionRecord {
   tool: AutomaticWorkflowTool;
   attemptedRevision: number;
+  reason: string;
   status: "succeeded" | "failed" | "stale_replanned";
   resultingRevision?: number;
   errorCode?: string;
   data?: unknown;
 }
 
+/**
+ * Ephemeral, discardable Phase C workflow plan. It deliberately contains both
+ * the single currently executable low-risk candidate and the completed attempt
+ * history needed to explain/reconstruct how this run reached its boundary.
+ * It is never persisted as HostState.
+ */
 export interface WorkflowPlan {
   goal: WorkflowGoal;
   baseRevision?: number;
-  candidateStep?: WorkflowStep;
+  candidateSteps: WorkflowStep[];
+  completedSteps: WorkflowExecutionRecord[];
   stopReason?: WorkflowStopReason;
   requiredInput?: WorkflowRequiredInput;
+  confirmationBoundary?: WorkflowConfirmationBoundary;
 }
 
 export interface WorkflowRunResult {
@@ -52,6 +69,7 @@ export interface WorkflowRunResult {
   stopReason: WorkflowStopReason;
   requiredInput?: WorkflowRequiredInput;
   records: WorkflowExecutionRecord[];
+  finalPlan: WorkflowPlan;
   projection: OperatingProjection | null;
 }
 
@@ -75,16 +93,38 @@ export interface WorkflowRunnerOptions {
 const DEFAULT_MAX_SUCCESSFUL_STEPS = 4;
 const DEFAULT_MAX_STALE_REPLANS = 2;
 
+function copyRecords(records: readonly WorkflowExecutionRecord[]): WorkflowExecutionRecord[] {
+  return records.map((record) => ({ ...record }));
+}
+
 function stop(
   reason: WorkflowStopReason,
   projection: OperatingProjection | null,
+  completedSteps: readonly WorkflowExecutionRecord[] = [],
   requiredInput?: WorkflowRequiredInput,
+  confirmationBoundary?: WorkflowConfirmationBoundary,
 ): WorkflowPlan {
   return {
     goal: "advance_event_preparation",
     ...(projection?.event ? { baseRevision: projection.event.revision } : {}),
+    candidateSteps: [],
+    completedSteps: copyRecords(completedSteps),
     stopReason: reason,
     ...(requiredInput ? { requiredInput } : {}),
+    ...(confirmationBoundary ? { confirmationBoundary } : {}),
+  };
+}
+
+function candidate(
+  projection: OperatingProjection,
+  completedSteps: readonly WorkflowExecutionRecord[],
+  step: WorkflowStep,
+): WorkflowPlan {
+  return {
+    goal: "advance_event_preparation",
+    baseRevision: projection.event.revision,
+    candidateSteps: [step],
+    completedSteps: copyRecords(completedSteps),
   };
 }
 
@@ -96,47 +136,53 @@ function stop(
 export function planLowRiskWorkflow(
   projection: OperatingProjection | null,
   policy: WorkflowPolicyContext,
+  completedSteps: readonly WorkflowExecutionRecord[] = [],
 ): WorkflowPlan {
-  if (!projection?.event) return stop("missing_event", projection);
+  if (!projection?.event) return stop("missing_event", projection, completedSteps);
 
-  if (projection.attention.kind === "confirmation") return stop("confirmation_required", projection);
-  if (projection.attention.kind === "failure") return stop("failure", projection);
-  if (projection.attention.kind === "change_review") return stop("change_review", projection);
-  if (projection.attention.kind === "missing_input") return stop("missing_input", projection);
+  if (projection.attention.kind === "confirmation") {
+    return stop(
+      "confirmation_required",
+      projection,
+      completedSteps,
+      undefined,
+      {
+        kind: "explicit_customer_confirmation",
+        title: projection.attention.title,
+        detail: projection.attention.detail,
+        ...(projection.attention.relatedId ? { relatedId: projection.attention.relatedId } : {}),
+      },
+    );
+  }
+  if (projection.attention.kind === "failure") return stop("failure", projection, completedSteps);
+  if (projection.attention.kind === "change_review") return stop("change_review", projection, completedSteps);
+  if (projection.attention.kind === "missing_input") return stop("missing_input", projection, completedSteps);
 
-  if (!projection.menu) return stop("customer_choice", projection);
+  if (!projection.menu) return stop("customer_choice", projection, completedSteps);
 
   if (projection.shopping.totalLines === 0) {
     if (!policy.inventoryReviewConfirmed) {
-      return stop("missing_input", projection, {
+      return stop("missing_input", projection, completedSteps, {
         field: "inventory_review",
         prompt: "Before I calculate shopping, tell me what required ingredients you already have. If you have none of them, say that explicitly. Host will not guess quantities.",
       });
     }
-    return {
-      goal: "advance_event_preparation",
-      baseRevision: projection.event.revision,
-      candidateStep: {
-        tool: "build_shopping_plan",
-        expectedRevision: projection.event.revision,
-        reason: "The menu is committed and inventory review is explicitly complete, so authoritative shopping can be reconciled.",
-      },
-    };
+    return candidate(projection, completedSteps, {
+      tool: "build_shopping_plan",
+      expectedRevision: projection.event.revision,
+      reason: "The menu is committed and inventory review is explicitly complete, so authoritative shopping can be reconciled.",
+    });
   }
 
   if (projection.preparation.totalTasks === 0) {
-    return {
-      goal: "advance_event_preparation",
-      baseRevision: projection.event.revision,
-      candidateStep: {
-        tool: "build_preparation_plan",
-        expectedRevision: projection.event.revision,
-        reason: "The shopping plan exists and no preparation graph exists, so the dependency-aware run sheet can be built without a material customer decision.",
-      },
-    };
+    return candidate(projection, completedSteps, {
+      tool: "build_preparation_plan",
+      expectedRevision: projection.event.revision,
+      reason: "The shopping plan exists and no preparation graph exists, so the dependency-aware run sheet can be built without a material customer decision.",
+    });
   }
 
-  return stop("no_low_risk_work", projection);
+  return stop("no_low_risk_work", projection, completedSteps);
 }
 
 function validateLimit(value: number | undefined, fallback: number, name: string): number {
@@ -145,6 +191,25 @@ function validateLimit(value: number | undefined, fallback: number, name: string
     throw new RangeError(`${name} must be an integer from 1 to 20.`);
   }
   return resolved;
+}
+
+function runResult(params: {
+  startRevision: number | undefined;
+  projection: OperatingProjection | null;
+  stopReason: WorkflowStopReason;
+  records: WorkflowExecutionRecord[];
+  finalPlan: WorkflowPlan;
+}): WorkflowRunResult {
+  return {
+    goal: "advance_event_preparation",
+    ...(params.startRevision !== undefined ? { startRevision: params.startRevision } : {}),
+    ...(params.projection?.event ? { finalRevision: params.projection.event.revision } : {}),
+    stopReason: params.stopReason,
+    ...(params.finalPlan.requiredInput ? { requiredInput: params.finalPlan.requiredInput } : {}),
+    records: copyRecords(params.records),
+    finalPlan: params.finalPlan,
+    projection: params.projection,
+  };
 }
 
 /**
@@ -172,20 +237,18 @@ export async function runLowRiskWorkflow(params: {
   let staleReplans = 0;
 
   while (successfulSteps < maxSuccessfulSteps) {
-    const plan = planLowRiskWorkflow(projection, params.policy);
-    if (!plan.candidateStep) {
-      return {
-        goal: "advance_event_preparation",
-        ...(startRevision !== undefined ? { startRevision } : {}),
-        ...(projection?.event ? { finalRevision: projection.event.revision } : {}),
-        stopReason: plan.stopReason ?? "no_low_risk_work",
-        ...(plan.requiredInput ? { requiredInput: plan.requiredInput } : {}),
-        records,
+    const plan = planLowRiskWorkflow(projection, params.policy, records);
+    const step = plan.candidateSteps[0];
+    if (!step) {
+      return runResult({
+        startRevision,
         projection,
-      };
+        stopReason: plan.stopReason ?? "no_low_risk_work",
+        records,
+        finalPlan: plan,
+      });
     }
 
-    const step = plan.candidateStep;
     const result = await params.tools.execute({
       name: step.tool,
       input: { eventId: params.eventId, expectedRevision: step.expectedRevision },
@@ -195,6 +258,7 @@ export async function runLowRiskWorkflow(params: {
       records.push({
         tool: step.tool,
         attemptedRevision: step.expectedRevision,
+        reason: step.reason,
         status: "succeeded",
         ...(result.revision !== undefined ? { resultingRevision: result.revision } : {}),
         data: result.data,
@@ -208,49 +272,32 @@ export async function runLowRiskWorkflow(params: {
       records.push({
         tool: step.tool,
         attemptedRevision: step.expectedRevision,
+        reason: step.reason,
         status: "stale_replanned",
         errorCode: result.error.code,
       });
       staleReplans += 1;
-      if (staleReplans > maxStaleReplans) {
-        projection = await params.projectionReader.readProjection(params.eventId, attentionContext);
-        return {
-          goal: "advance_event_preparation",
-          ...(startRevision !== undefined ? { startRevision } : {}),
-          ...(projection?.event ? { finalRevision: projection.event.revision } : {}),
-          stopReason: "stale_revision_limit",
-          records,
-          projection,
-        };
-      }
       projection = await params.projectionReader.readProjection(params.eventId, attentionContext);
+      if (staleReplans > maxStaleReplans) {
+        const finalPlan = stop("stale_revision_limit", projection, records);
+        return runResult({ startRevision, projection, stopReason: "stale_revision_limit", records, finalPlan });
+      }
       continue;
     }
 
     records.push({
       tool: step.tool,
       attemptedRevision: step.expectedRevision,
+      reason: step.reason,
       status: "failed",
       errorCode: result.error.code,
     });
     projection = await params.projectionReader.readProjection(params.eventId, attentionContext);
-    return {
-      goal: "advance_event_preparation",
-      ...(startRevision !== undefined ? { startRevision } : {}),
-      ...(projection?.event ? { finalRevision: projection.event.revision } : {}),
-      stopReason: "failure",
-      records,
-      projection,
-    };
+    const finalPlan = stop("failure", projection, records);
+    return runResult({ startRevision, projection, stopReason: "failure", records, finalPlan });
   }
 
   projection = await params.projectionReader.readProjection(params.eventId, attentionContext);
-  return {
-    goal: "advance_event_preparation",
-    ...(startRevision !== undefined ? { startRevision } : {}),
-    ...(projection?.event ? { finalRevision: projection.event.revision } : {}),
-    stopReason: "no_low_risk_work",
-    records,
-    projection,
-  };
+  const finalPlan = stop("step_limit", projection, records);
+  return runResult({ startRevision, projection, stopReason: "step_limit", records, finalPlan });
 }
