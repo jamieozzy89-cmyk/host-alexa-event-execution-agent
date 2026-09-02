@@ -26,6 +26,38 @@ export { DemoProductCatalogueAdapter } from "../simulated-services/product-catal
 export { JsonStoragePersistenceAdapter } from "../persistence/storage-adapter.js";
 export type { HostPersistenceAdapter, StorageLike } from "../persistence/types.js";
 
+export {
+  HostApplicationReadService,
+  deriveOperatingProjection,
+  summarizeInventory,
+  summarizePreparation,
+  summarizeShopping,
+} from "./event-operating-state.js";
+export type {
+  EventOperatingSource,
+  HostApplicationReadServiceOptions,
+  InventoryCoverageSummary,
+  MenuOperatingSummary,
+  OperatingProjection,
+  PreparationSummary,
+  ReadinessSummary,
+  ShoppingSummary,
+  TimingPlaceholder,
+} from "./event-operating-state.js";
+export { deriveCustomerStage } from "./lifecycle.js";
+export type { CustomerEventStage } from "./lifecycle.js";
+export { deriveAttention } from "./attention.js";
+export type {
+  AttentionContext,
+  AttentionDerivationInput,
+  AttentionItem,
+  AttentionKind,
+  BlockingFailureAttention,
+  MissingInputAttention,
+  PendingChangeAttention,
+  PendingConfirmationAttention,
+} from "./attention.js";
+
 export { HostAgentOrchestrator } from "../agent/orchestrator.js";
 export { HeuristicIntentInterpreter, constraintsFromText } from "../agent/interpreter.js";
 export { JsonModelProxyAdapter, ModelBackedIntentInterpreter, ResilientIntentInterpreter } from "../agent/model.js";
