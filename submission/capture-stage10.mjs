@@ -37,7 +37,7 @@ try {
   await page.getByRole("button", { name: "Confirm" }).click();
 
   await page.getByRole("button", { name: "Build shopping list" }).click();
-  await page.getByText("Authoritative quantities").waitFor();
+  await page.getByRole("article", { name: "Authoritative shopping list" }).waitFor();
   await shot("03-authoritative-shopping");
 
   await page.getByRole("button", { name: "Find demo products" }).click();
@@ -47,7 +47,7 @@ try {
   await page.getByRole("button", { name: "Confirm" }).click();
   await page.getByRole("button", { name: "Build prep plan" }).waitFor();
   await page.getByRole("button", { name: "Build prep plan" }).click();
-  await page.getByText("Dependency-aware plan").waitFor();
+  await page.getByRole("article", { name: "Preparation plan" }).waitFor();
 
   await page.getByRole("button", { name: "Live" }).click();
   await page.getByRole("heading", { name: "Live Mode" }).waitFor();

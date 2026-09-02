@@ -90,8 +90,9 @@ function cardShell(title: string, eyebrow?: string): HTMLElement {
 }
 
 function renderEvent(card: Extract<AgentCard, { type: "event_summary" }>): HTMLElement {
-  const wrap = cardShell(card.title, "Current plan");
+  const wrap = cardShell(card.title, "Tonight at a glance");
   wrap.classList.add("event-card");
+  wrap.setAttribute("aria-label", "Authoritative event summary");
   const grid = el("dl", "summary-grid");
   const fields: Array<[string, string]> = [
     ["When", formatDate(card.startAt)],
@@ -135,6 +136,7 @@ function renderMenu(card: Extract<AgentCard, { type: "menu_options" }>, reply: A
 function renderShopping(card: Extract<AgentCard, { type: "shopping_list" }>, handlers: UiHandlers): HTMLElement {
   const wrap = cardShell(card.title, "What still needs buying");
   wrap.classList.add("shopping-card");
+  wrap.setAttribute("aria-label", "Authoritative shopping list");
   const open = card.items.filter((item) => item.toBuyQuantity > 0 && item.status !== "simulated_purchased");
   const purchased = card.items.filter((item) => item.status === "simulated_purchased").length;
   const stats = el("div", "stat-row");
@@ -188,6 +190,7 @@ function renderProducts(card: Extract<AgentCard, { type: "product_choices" }>): 
 function renderPrep(card: Extract<AgentCard, { type: "prep_timeline" }>, reply: AgentReply | undefined, handlers: UiHandlers, state: HostUiState, live = false): HTMLElement {
   const wrap = cardShell(live ? "Live preparation" : card.title, live ? "One thing at a time" : "Kitchen run sheet");
   wrap.classList.add(live ? "live-prep-card" : "prep-card");
+  wrap.setAttribute("aria-label", live ? "Live preparation" : "Preparation plan");
   const tasks = live ? card.tasks.filter((task) => task.status === "ready").slice(0, 1) : card.tasks;
   if (tasks.length === 0) {
     wrap.append(el("p", "empty-state", live ? "No prep task is ready right now." : "No preparation tasks yet."));
@@ -392,7 +395,7 @@ function renderPlan(state: HostUiState, handlers: UiHandlers): HTMLElement {
   return main;
 }
 
-function renderLive(state: HostUiState, handlers: UiHandlers): HTMKElement {
+function renderLive(state: HostUiState, handlers: UiHandlers): HTMLElement {
   const view = el("section", "mode-view live-view");
   const reply = state.liveReply ?? latestReply(state);
   const prep = reply?.cards.find((card): card is Extract<AgentCard, { type: "prep_timeline" }> => card.type === "prep_timeline");
@@ -414,7 +417,7 @@ function renderLive(state: HostUiState, handlers: UiHandlers): HTMKElement {
   return view;
 }
 
-function renderPrivacy(state: HostUiState, handlers: UiHandlers): HTMKElement {
+function renderPrivacy(state: HostUiState, handlers: UiHandlers): HTMLElement {
   const wrap = cardShell("Data & privacy", "Current demo behavior");
   wrap.classList.add("privacy-card");
   wrap.append(el("p", "privacy-copy", "Host stores event details in this browser only. This current build does not send plan data to a Host application server."));
@@ -452,7 +455,7 @@ function renderPrivacy(state: HostUiState, handlers: UiHandlers): HTMKElement {
   return wrap;
 }
 
-function renderActivity(state: HostUiState, handlers: UiHandlers): HTMKElement {
+function renderActivity(state: HostUiState, handlers: UiHandlers): HTMLElement {
   const view = el("section", "mode-view activity-view");
   const reply = latestReply(state);
   const history = reply?.cards.find((card): card is Extract<AgentCard, { type: "history" }> => card.type === "history") ?? state.latest.history;

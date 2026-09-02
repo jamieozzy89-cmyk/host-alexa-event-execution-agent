@@ -18,7 +18,7 @@ async function send(page: Page, text: string): Promise<void> {
 async function createEvent(page: Page): Promise<void> {
   await send(page, PRIMARY_REQUEST);
   await expect(page.getByRole("button", { name: "Show menu ideas" })).toBeVisible();
-  await expect(page.locator(".surface-card").filter({ hasText: "Current plan" })).toContainText("6");
+  await expect(page.getByRole("article", { name: "Authoritative event summary" })).toContainText("6");
 }
 
 async function commitFirstMenu(page: Page): Promise<void> {
@@ -32,7 +32,7 @@ async function commitFirstMenu(page: Page): Promise<void> {
 
 async function buildPrep(page: Page): Promise<void> {
   await page.getByRole("button", { name: "Build prep plan" }).click();
-  await expect(page.getByText("Dependency-aware plan")).toBeVisible();
+  await expect(page.getByRole("article", { name: "Preparation plan" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Done" }).first()).toBeVisible();
 }
 
@@ -42,7 +42,10 @@ test("complete core journey works through visible touch/action routes", async ({
   await commitFirstMenu(page);
 
   await page.getByRole("button", { name: "Build shopping list" }).click();
-  await expect(page.getByText("Authoritative quantities")).toBeVisible();
+  const shopping = page.getByRole("article", { name: "Authoritative shopping list" });
+  await expect(shopping).toBeVisible();
+  await expect(shopping).toContainText("to buy");
+  await expect(shopping).toContainText("on hand");
   await page.getByRole("button", { name: "Find demo products" }).click();
   await expect(page.getByText("Simulation only — no real order")).toBeVisible();
   await page.getByRole("button", { name: "Simulate checkout" }).click();
@@ -90,7 +93,7 @@ test("reload resumes authoritative event state and drops stale confirmation UI",
   await page.reload();
   await expect(page.getByLabel("Host conversation").getByText(/Welcome back\. Dinner at home is restored/)).toBeVisible();
   await expect(page.getByText("Your confirmation is required")).toHaveCount(0);
-  await expect(page.locator(".surface-card").filter({ hasText: "Current plan" })).toContainText("6");
+  await expect(page.getByRole("article", { name: "Authoritative event summary" })).toContainText("6");
 
   await page.getByRole("button", { name: "Activity" }).click();
   await expect(page.getByRole("heading", { name: "Activity", exact: true })).toBeVisible();
