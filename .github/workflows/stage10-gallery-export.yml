@@ -1,7 +1,7 @@
 name: Stage 10 gallery export
 on:
   push:
-    branches: [ui-redesign-editorial]
+    branches: [main]
     paths:
       - '.stage10-gallery-export-trigger'
 permissions:
@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ui-redesign-editorial
+          ref: main
       - name: Validate gallery set
         shell: bash
         run: |
