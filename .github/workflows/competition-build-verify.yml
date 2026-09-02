@@ -40,3 +40,20 @@ jobs:
 
       - name: Echo and mobile browser gate
         run: npx playwright test
+
+      - name: Assemble controlled source snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/host-competition-safe
+          git archive --format=zip --output=/tmp/host-competition-safe/HOST_COMPETITION_BUILD_SOURCE.zip HEAD
+          sha256sum /tmp/host-competition-safe/HOST_COMPETITION_BUILD_SOURCE.zip > /tmp/host-competition-safe/HOST_COMPETITION_BUILD_SOURCE.zip.sha256
+          printf 'source_branch=host-competition-build\nsource_commit=%s\ncreated_utc=%s\n' "$(git rev-parse HEAD)" "$(date -u +%FT%TZ)" > /tmp/host-competition-safe/SOURCE_PROVENANCE.txt
+
+      - name: Upload controlled source snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: host-competition-build-source
+          path: /tmp/host-competition-safe/
+          if-no-files-found: error
+          retention-days: 30
