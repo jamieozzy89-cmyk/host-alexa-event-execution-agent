@@ -2,8 +2,9 @@ import {
   createDefaultMenuProposalAdapter,
   DemoProductCatalogueAdapter,
   DeterministicSimulatedCartAdapter,
+  GoalDirectedHostAgentOrchestrator,
   HeuristicIntentInterpreter,
-  HostAgentOrchestrator,
+  HostApplicationReadService,
   HostToolRuntime,
   JsonStoragePersistenceAdapter,
 } from "../src/application/index.js";
@@ -41,7 +42,7 @@ export function resolveBrowserStorage(): BrowserStorageResolution {
 }
 
 export interface BrowserHostRuntime {
-  agent: HostAgentOrchestrator;
+  agent: GoalDirectedHostAgentOrchestrator;
   storageMode: BrowserStorageMode;
   activeEventId(): string | null;
   rememberEvent(eventId: string): void;
@@ -57,11 +58,13 @@ export function createBrowserHostRuntime(storageResolution: BrowserStorageResolu
     productCatalogue: new DemoProductCatalogueAdapter(),
     cartActions: new DeterministicSimulatedCartAdapter(),
   });
+  const operatingProjectionReader = new HostApplicationReadService(persistence);
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/London";
-  const agent = new HostAgentOrchestrator(runtime, new HeuristicIntentInterpreter(), {
+  const agent = new GoalDirectedHostAgentOrchestrator(runtime, new HeuristicIntentInterpreter(), {
     defaultTimezone: timezone,
     defaultCurrency: "GBP",
     idFactory: () => `host-${crypto.randomUUID()}`,
+    operatingProjectionReader,
   });
 
   const clearHostEventData = (): number => {
