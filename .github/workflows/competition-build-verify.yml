@@ -5,6 +5,10 @@ on:
     branches: [host-competition-build]
   workflow_dispatch:
 
+concurrency:
+  group: competition-build-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
