@@ -17,43 +17,40 @@ async function send(page: Page, text: string): Promise<void> {
 
 async function createEvent(page: Page): Promise<void> {
   await send(page, PRIMARY_REQUEST);
-  await expect(page.getByRole("button", { name: "Show menu ideas" })).toBeVisible();
   await expect(page.getByRole("article", { name: "Authoritative event summary" })).toContainText("6");
+  await expect(page.getByRole("button", { name: "Choose this menu" }).first()).toBeVisible();
 }
 
 async function commitFirstMenu(page: Page): Promise<void> {
-  await page.getByRole("button", { name: "Show menu ideas" }).click();
-  await expect(page.getByRole("button", { name: "Choose this menu" }).first()).toBeVisible();
   await page.getByRole("button", { name: "Choose this menu" }).first().click();
   await expect(page.getByText("Your confirmation is required")).toBeVisible();
   await page.getByRole("button", { name: "Confirm" }).click();
-  await expect(page.getByRole("button", { name: "Build shopping list" })).toBeVisible();
+  await expect(page.getByLabel("Host conversation").getByText(/What required ingredients do you already have/i)).toBeVisible();
 }
 
-async function buildPrep(page: Page): Promise<void> {
-  await page.getByRole("button", { name: "Build prep plan" }).click();
+async function completeInventoryReview(page: Page): Promise<void> {
+  await send(page, "I don't have any of them");
+  await expect(page.getByRole("article", { name: "Authoritative shopping list" })).toBeVisible();
   await expect(page.getByRole("article", { name: "Preparation plan" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Done" }).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: "Review demo products" })).toBeVisible();
 }
 
-test("complete core journey works through visible touch/action routes", async ({ page }) => {
+test("complete core journey works through goal-directed visible touch/action routes", async ({ page }) => {
   await openClean(page);
   await createEvent(page);
   await commitFirstMenu(page);
+  await completeInventoryReview(page);
 
-  await page.getByRole("button", { name: "Build shopping list" }).click();
   const shopping = page.getByRole("article", { name: "Authoritative shopping list" });
-  await expect(shopping).toBeVisible();
   await expect(shopping).toContainText("to buy");
   await expect(shopping).toContainText("on hand");
-  await page.getByRole("button", { name: "Find demo products" }).click();
+  await page.getByRole("button", { name: "Review demo products" }).click();
   await expect(page.getByText("Simulation only — no real order")).toBeVisible();
   await page.getByRole("button", { name: "Simulate checkout" }).click();
   await expect(page.getByText("Your confirmation is required")).toBeVisible();
   await page.getByRole("button", { name: "Confirm" }).click();
-  await expect(page.getByRole("button", { name: "Build prep plan" })).toBeVisible();
+  await expect(page.getByLabel("Host conversation").getByText(/Simulated checkout complete/i)).toBeVisible();
 
-  await buildPrep(page);
   await page.getByRole("button", { name: "Live" }).click();
   await expect(page.getByRole("heading", { name: "Live Mode" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Mark complete" })).toBeVisible();
@@ -66,11 +63,11 @@ test("complete core journey works through visible touch/action routes", async ({
   await expect(page.locator(".history-row").first()).toBeVisible();
 });
 
-test("late vegan guest is previewed before the confirmed plan update", async ({ page }) => {
+test("late vegan guest interrupts workflow and is previewed before confirmed plan update", async ({ page }) => {
   await openClean(page);
   await createEvent(page);
   await commitFirstMenu(page);
-  await buildPrep(page);
+  await completeInventoryReview(page);
 
   await send(page, "We have another guest and they're vegan");
   await expect(page.getByText("Checked — not applied yet")).toBeVisible();
@@ -86,7 +83,6 @@ test("late vegan guest is previewed before the confirmed plan update", async ({ 
 test("reload resumes authoritative event state and drops stale confirmation UI", async ({ page }) => {
   await openClean(page);
   await createEvent(page);
-  await page.getByRole("button", { name: "Show menu ideas" }).click();
   await page.getByRole("button", { name: "Choose this menu" }).first().click();
   await expect(page.getByText("Your confirmation is required")).toBeVisible();
 
@@ -102,7 +98,6 @@ test("reload resumes authoritative event state and drops stale confirmation UI",
 test("interactive controls meet touch target floor and the page avoids document overflow", async ({ page }) => {
   await openClean(page);
   await createEvent(page);
-  await page.getByRole("button", { name: "Show menu ideas" }).click();
   await expect(page.getByRole("button", { name: "Choose this menu" }).first()).toBeVisible();
 
   const measurements = await page.locator("button:visible, input:visible").evaluateAll((nodes) => nodes.map((node) => {
