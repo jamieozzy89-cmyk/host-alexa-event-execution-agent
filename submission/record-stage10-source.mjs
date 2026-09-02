@@ -76,7 +76,7 @@ try {
   await page.getByRole("button", { name: "Build shopping list" }).waitFor();
 
   await page.getByRole("button", { name: "Build shopping list" }).click();
-  await page.getByText("Authoritative quantities").waitFor();
+  await page.getByRole("article", { name: "Authoritative shopping list" }).waitFor();
   await caption("Shopping uses required − confirmed on-hand quantities.");
   await page.getByRole("button", { name: "Find demo products" }).click();
   await page.getByText("Simulation only — no real order").waitFor();
@@ -88,7 +88,7 @@ try {
   await page.getByRole("button", { name: "Build prep plan" }).waitFor();
 
   await page.getByRole("button", { name: "Build prep plan" }).click();
-  await page.getByText("Dependency-aware plan").waitFor();
+  await page.getByRole("article", { name: "Preparation plan" }).waitFor();
   await page.getByRole("button", { name: "Live" }).click();
   await page.getByRole("heading", { name: "Live Mode" }).waitFor();
   await caption("Live Mode shows the authoritative next ready task.");
@@ -132,7 +132,7 @@ await writeFile(`${OUT}/SOURCE_RUN_MANIFEST.txt`, [
   `file=${target}`,
   `resolution=1280x800`,
   `wall_clock_seconds=${elapsed.toFixed(2)}`,
-  `source_branch=stage10-submission`,
+  `source_branch=ui-redesign-editorial`,
   `note=Uninterrupted automated browser recording of the working Host application. Silent source run with in-app demo captions; not the final public narrated upload.`,
   "",
 ].join("\n"));
