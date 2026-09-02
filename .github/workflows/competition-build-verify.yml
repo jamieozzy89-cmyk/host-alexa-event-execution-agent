@@ -1,0 +1,42 @@
+name: Competition build verification
+
+on:
+  push:
+    branches: [host-competition-build]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: host-competition-build
+          fetch-depth: 0
+
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.12.0'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Backend and application tests
+        run: npm test
+
+      - name: Production dependency audit
+        run: npm audit --omit=dev
+
+      - name: Production web build
+        run: npm run build:web
+
+      - name: Echo and mobile browser gate
+        run: npx playwright test
