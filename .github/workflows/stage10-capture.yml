@@ -1,7 +1,7 @@
 name: Stage 10 gallery capture
 on:
   push:
-    branches: [ui-redesign-editorial]
+    branches: [main]
     paths:
       - '.stage10-capture-trigger'
 permissions:
@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ui-redesign-editorial
+          ref: main
           fetch-depth: 0
       - name: Install dependencies and Chromium
         run: |
@@ -52,7 +52,11 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add submission/screenshots
-          git commit -m "Capture verified redesign gallery screenshots"
-          git fetch origin ui-redesign-editorial
-          git rebase origin/ui-redesign-editorial
-          git push origin HEAD:ui-redesign-editorial
+          if git diff --cached --quiet; then
+            echo "No screenshot changes to commit."
+            exit 0
+          fi
+          git commit -m "Capture verified Stage 10 gallery screenshots"
+          git fetch origin main
+          git rebase origin/main
+          git push origin HEAD:main
