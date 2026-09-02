@@ -2,34 +2,52 @@
 
 ## One-line continuation rule
 
-A new chat should continue from branch `ui-redesign-editorial` in repository `jamieozzy89-cmyk/host-alexa-event-execution-agent`, read this file first, and treat Git as the source of truth. Do not continue from chat memory alone.
+Continue only from repository `jamieozzy89-cmyk/host-alexa-event-execution-agent`, branch `ui-redesign-editorial`. Read this file completely before changing project state. Git is the controlling source; do not reconstruct project state from chat memory.
+
+## Current controlled continuation point
+
+The editorial UI redesign is now **technically verified, visually audited against the preserved Stage 10 baseline, presentation-regenerated, and preserved on `ui-redesign-editorial`**.
+
+Do **not** merge or promote automatically. No merge to `main` or replacement of the existing public Stage 09 release has been performed in this continuation. The next action after reading this handover must be explicitly authorised by the user if it changes release/promotion state.
+
+Branch state immediately before this handover update:
+
+- branch: `ui-redesign-editorial`
+- cleanup head: `99655711296106ee7bae81c702904da24ff2e933`
+- verified product-correction commit: `875684e150164531c2c29e5cc591a9eab9b20cf3`
+- redesigned gallery screenshot commit: `dd585edbffa272053c8b2560612ac9b5de050515`
+- redesigned demo-recorder correction commit: `84eaa84b7c38181cdd807e07488ca0cf730a6d43`
+
+This handover commit supersedes the older continuation instructions that described the redesign as unaccepted or still awaiting its 26/26 gate.
 
 ## Project identity
 
-**Project:** Host: Alexa+ Event Execution Agent
-**Competition:** Build, Ship, Shape: Amazon Developer Hackathon 2026
-**Primary track:** Alexa+
-**Implementation route:** simulated Alexa+ web experience
-**Public repository:** https://github.com/jamieozzy89-cmyk/host-alexa-event-execution-agent
-**Current accepted public release:** Stage 09 hardened product on `main`
-**Accepted Stage 09 public commit:** `7498cbe7e10fbe6df068d7eb91e9793c06284c79`
-**Current continuation branch:** `ui-redesign-editorial`
-**Stage 10 branch before redesign:** `stage10-submission`
-**Stage 10 commit used as redesign base:** `2bd5ee716fb14882c58abf759a75815a4eb5bc8c`
+**Project:** Host: Alexa+ Event Execution Agent  
+**Competition:** Build, Ship, Shape: Amazon Developer Hackathon 2026  
+**Primary track:** Alexa+  
+**Implementation route:** simulated Alexa+ web experience  
+**Repository:** `jamieozzy89-cmyk/host-alexa-event-execution-agent`  
+**Current continuation branch:** `ui-redesign-editorial`  
+**Current public accepted release:** Stage 09 on `main`  
+**Accepted Stage 09 public commit:** `7498cbe7e10fbe6df068d7eb91e9793c06284c79`  
+**Stage 10 pre-redesign branch:** `stage10-submission`  
+**Stage 10 redesign base:** `2bd5ee716fb14882c58abf759a75815a4eb5bc8c`
+
+The redesigned branch is a verified release candidate, but it has not been promoted to `main`.
 
 ## Governing execution standard
 
-This is controlled serious work. Do not take shortcuts, infer missing state, or treat successful-looking output as proof. Verify every gate. If a verification step fails, preserve the failure and fix the cause rather than weakening the test.
+This is controlled serious work. Do not take shortcuts, infer missing state, weaken tests, substitute visual plausibility for direct examination, or treat output production as proof of progress.
 
 Permanent integrity rule:
 
 > Nothing becomes done because model text, voice output or UI language says it happened. Only validated application/tool/domain state and receipts establish completion.
 
-Do not add AWS claims, deployment claims, real-purchase claims or Alexa hardware claims unless they are real and verified.
+Do not add AWS claims, hosted-deployment claims, real-purchase claims, Alexa-hardware claims, certification claims, or final-submission claims unless those facts are real and directly verified.
 
 ## Product purpose
 
-Host is an execution agent for people hosting at home, not a generic event-planning chatbot.
+Host is an execution agent for people hosting at home, not a generic planning chatbot.
 
 Core promise:
 
@@ -37,7 +55,7 @@ Core promise:
 
 Host maintains authoritative state across event constraints, menu commitment, inventory, shopping deficits, preparation dependencies, late changes, confirmations, execution receipts and hands-busy Live Mode.
 
-Controlled path:
+Controlled application path:
 
 `user intent -> HostAgentOrchestrator -> validated tool -> domain validation -> persistence -> receipt/audit -> customer response`
 
@@ -45,11 +63,11 @@ Voice path:
 
 `recognized speech -> HostAgentOrchestrator.handleText() -> same tools/domain/persistence -> same AgentReply -> speech output`
 
-## Accepted engineering state
+## Retained engineering state
 
 ### Stage 02 — authoritative domain engine
 
-Retained and verified:
+Retained:
 
 - typed event state and revisions;
 - confirmed constraints;
@@ -66,7 +84,7 @@ Retained and verified:
 
 ### Stage 03 — persistence
 
-Retained and verified:
+Retained:
 
 - versioned JSON persistence envelope;
 - checksum/integrity validation;
@@ -97,11 +115,11 @@ Authoritative application surface remains 17 tools:
 16. `get_action_history`
 17. `undo_reversible_action`
 
-Direct browser/application mutation through `HostDomainEngine` is forbidden.
+Direct browser/application mutation through `HostDomainEngine` remains forbidden.
 
 ### Stage 05 — agent/orchestrator
 
-Retained and verified:
+Retained:
 
 - `HostAgentOrchestrator`;
 - deterministic heuristic interpreter;
@@ -116,27 +134,21 @@ Retained and verified:
 - customer-safe history and failure wording;
 - fresh-session resume without stale confirmation state.
 
-### Stage 06 — touch UI
+### Stage 06/07 — UI and voice behavior
 
-Accepted before redesign:
+Retained and reverified through the redesign:
 
 - Vite browser application;
 - Plan / Live / Activity modes;
 - event/menu/shopping/products/prep/change/history/confirmation presentation;
-- responsive Echo Show-like and mobile layouts;
+- Echo Show-like and mobile layouts;
 - touch-only complete journey;
 - reload/resume;
-- minimum touch-target checks;
-- dark/light theme.
-
-### Stage 07 — voice
-
-Accepted before redesign:
-
+- dark/light theme;
 - browser Web Speech adapter;
 - recognition + speech synthesis;
 - explicit voice states;
-- same orchestrator/tool path as typed input;
+- voice and typed input share the same orchestrator/tool path;
 - spoken menu choice remains confirmation-gated;
 - spoken `done` resolves against authoritative `nextAction`;
 - spoken confirmation/cancellation;
@@ -145,179 +157,284 @@ Accepted before redesign:
 ### Stage 08 — competition integration decision
 
 - Open Source mini challenge selected.
-- AWS Builder deliberately deferred for now.
-- User has an AWS account, but current work proceeds without connecting AWS.
-- If AWS is later resumed, only the already-selected controlled design is authorised: Bedrock behind the existing structured intent boundary plus AgentCore Memory for non-authoritative cross-event preferences.
+- AWS Builder remains deliberately deferred.
+- An AWS account exists, but the current product does not claim AWS integration.
+- If AWS work is later authorised, the previously selected route remains Bedrock behind the existing structured intent boundary plus AgentCore Memory for non-authoritative cross-event preferences.
 - Do not list Bedrock/AgentCore in `Built With` unless real calls are implemented and verified.
 
-### Stage 09 — hardened accepted release
+### Stage 09 — accepted public baseline
 
-The accepted public Stage 09 product on `main` includes:
+The existing public `main` baseline retains:
 
-- **74/74 backend/application tests**;
-- **26/26 browser tests** on the accepted Stage 09 UI;
-- Axe WCAG A/AA representative-state scans;
+- 74/74 backend/application tests;
+- 26/26 browser tests;
+- representative Axe WCAG A/AA scans;
 - keyboard focus continuity;
 - modal focus return;
-- browser-local Data & privacy controls;
+- browser-local privacy/data controls;
 - scoped deletion of Host event data;
-- explicit memory fallback when persistent browser storage is unavailable;
+- persistent-storage fallback;
 - corrupt-storage recovery;
 - browser/runtime boundary scans;
-- zero production dependency vulnerabilities at release gate;
-- package/lock root version `0.9.0`;
+- zero production dependency vulnerabilities at its release gate;
+- package/lock version `0.9.0`;
 - Node floor `>=22.12.0`;
 - portable relative Vite asset paths.
 
-Stage 09 public `main` is the last accepted product release. The redesign branch is not accepted yet.
+Stage 09 remains the currently promoted public state until an explicit promotion occurs.
 
-## Stage 10 submission work already in Git
+## Editorial redesign — resolved state
 
-The redesign branch descends from the Stage 10 submission branch and carries the substantive Stage 10 work already produced.
+### Why the redesign existed
 
-Under `submission/` Git contains:
+The prior interface was rejected as too generic/AI-designed. The authorised redesign goal was a purpose-built hosting instrument:
 
-- `DEVPOST_STAGE10_DRAFT.md` — full Devpost narrative draft;
-- `DEVPOST_FIELD_MAP_STAGE10.md` — prepared-content to Devpost-field mapping;
-- `PRODUCT_FEEDBACK_STAGE10.md` — product/tool feedback draft;
-- `FRICTION_LOG_STAGE10.md` — four substantive friction entries;
-- `DEMO_VIDEO_SCRIPT_STAGE10.md` — demo run sheet/script;
-- `DEMO_NARRATION_60SEC_STAGE10.md` — ~60-second narration;
-- `SCREENSHOT_SHOTLIST_STAGE10.md`;
-- `GALLERY_INDEX_STAGE10.md`;
-- `OPEN_SOURCE_MINI_EVIDENCE.md`;
-- Stage 10 handovers;
-- real application gallery screenshots and submission assets already committed to the repository.
-
-Previously established submission decisions:
-
-- tagline: `An Alexa+ hosting agent that executes menu, shopping and prep while tracking what actually happened.`
-- strongest gallery lead: Live Mode;
-- locked six-image gallery order before redesign: Live Mode -> late-change impact -> Activity receipts -> authoritative shopping -> event-created -> mobile Live;
-- menu-confirmation image retained only as reserve;
-- final public demo video must remain under three minutes.
-
-A real source recording and ~60-second visual candidate were also produced in the prior sandbox, but those exact MP4 binaries are not guaranteed to exist in Git. The repository contains the journey/scripts needed to regenerate the demonstration. Do not claim those exact sandbox video binaries are in Git unless later uploaded/committed.
-
-Hosted deployment remains unresolved/optional for the simulated Alexa+ route. Do not fabricate a live URL.
-
-## Current authorised task: non-generic UI redesign
-
-The user rejected the existing interface as too generic/AI-designed and rejected further brainstorming without implementation. The current authorised work is therefore a real UI redesign, not more concept discussion.
-
-Redesign intent:
-
-- purpose-built hosting instrument rather than chatbot/dashboard;
 - workspace/result first, conversation secondary;
 - warm editorial Plan experience;
 - instrument-like high-focus Live Mode;
 - receipt/evidence-like Activity mode;
-- fewer rounded SaaS cards and pills;
-- more typography hierarchy, dividers, lists and explicit event structure;
-- preserve every action route, accessibility control and authoritative-state boundary;
-- do not rebuild the underlying architecture merely to change appearance.
+- fewer generic rounded SaaS cards/pills;
+- stronger typography, dividers, lists and explicit event structure;
+- no underlying architecture rewrite merely for appearance;
+- preserve authoritative-state and confirmation boundaries.
 
-### Redesign files
+### Initial locked candidate and discovered source-control fault
 
-The candidate changes only:
-
-- `web/main.ts`
-- `web/render.ts`
-- `web/styles.css`
-
-Locked redesign Git hashes from the locally compiled candidate:
+The original redesign candidate hashes recorded before continuation were:
 
 - `web/main.ts`: `6415e826d0d6fa9f67f9c47a6d5cb414c5e26fe7`
 - `web/render.ts`: `abb9a7aee41551407b88bc25ad49f7f8b64d2d8b`
-- intended `web/styles.css`: `e72283db6e46984f746e6eaa680cf7d206dc3ae2`
+- `web/styles.css`: `e72283db6e46984f746e6eaa680cf7d206dc3ae2`
 
-`web/main.ts` and `web/render.ts` are materialised on `ui-redesign-editorial`.
+On continuation, `web/render.ts` did not match its locked candidate. Commit `88fb4594a2386aee152990b6f9d05cec594da08f` had restored obsolete `Current plan` wording and introduced three `HTMKElement` type typos. That state was treated as invalid and was not used as the redesign source.
 
-The intended stylesheet is also preserved in Git as a compressed binary object under `.ui-redesign/styles.css.gz`. A first text-API transfer of that gzip was truncated; that failed materialisation run is historical and must not be mistaken for the corrected state. The correct binary Git blob is `6be278d4ec3180f1fb2d011ea810ec2ed7e0b490`, attached to the branch by commit `9a51d11cd10f8902f81b845a78abe404943bfeff`. When decompressed, it must hash as Git object `e72283db6e46984f746e6eaa680cf7d206dc3ae2` before use. If `web/styles.css` has not yet been materialised at the current branch head, reconstruct it from that exact Git-controlled gzip and verify the hash; do not regenerate the CSS from memory.
+The exact locked render source was restored from commit `128e282e059c0d7df9c7cbd28daf72ff4ee434ba` before authorised corrections were applied.
 
-## First redesign verification result — NOT ACCEPTED
+### Authorised corrections made
 
-Workflow run: `33572073754`
+Light-theme contrast defects were fixed without weakening Axe:
 
-The run successfully:
+- `--ink-muted` changed from `#7b7d74` to `#696c63`;
+- `--tomato` changed from `#b94e3b` to `#a84433`.
 
-- reconstructed the intended candidate CSS used by that run;
-- verified the three intended redesign file hashes during the run;
-- installed dependencies and Chromium;
-- ran **74/74 backend/application tests successfully**;
-- ran the production web build successfully.
+Stable semantic contracts were added:
 
-The unchanged 26-case browser gate then failed: **16 passed, 10 failed**.
+- event summary: `aria-label="Authoritative event summary"`;
+- shopping list: `aria-label="Authoritative shopping list"`;
+- preparation card: `aria-label="Preparation plan"`;
+- live preparation: `aria-label="Live preparation"`.
 
-The failures reduce to two known classes.
+Obsolete browser-test and capture-script coupling to cosmetic labels was replaced with these stable semantic contracts while preserving behavioral assertions.
 
-### 1. Genuine accessibility contrast defect
+Current critical Git blobs after correction:
 
-Axe found insufficient light-theme contrast. Exact examples from the run:
+- `web/main.ts`: `6415e826d0d6fa9f67f9c47a6d5cb414c5e26fe7`
+- `web/render.ts`: `7c99748c16c8bb45cacd1f50a43a534c80e312cd`
+- `web/styles.css`: `3d74ebd1ef7b14e0d1dc568c257fc9a64bd98d0b`
+- `tests/web/host-ui.spec.ts`: `3b41140c1a3c4d7635675a268ac6009ee857c09c`
+- `submission/capture-stage10.mjs`: `1d54580292ff8f9fa238a2f48d3e151ce4b881ff`
+- `submission/record-stage10-source.mjs`: `ab65403fac653fb2532ef3131500229e44cb8653`
 
-- `#7b7d74` on `#f4efe6` = **3.64:1**, below the required 4.5:1 for the tested small text;
-- affected examples include `.brand-subtitle`, inactive `.nav-button`, `#host-voice-state`, `.section-kicker`, `.message-role`;
-- light-theme eyebrow tomato `#b94e3b` on `#f4efe6` measured **4.34:1** for small text and also needs correction.
+## Verification history and final gate
 
-This is a real product defect. Fix the palette; do not weaken Axe.
+Several controlled runs exposed stale couplings before the accepted run. They are retained here so a future chat does not accidentally repeat them.
 
-### 2. Old browser tests coupled to removed presentation wording/structure
+- Run `33578564010`: backend/build passed; browser 22/26. Four remaining failures were stale shopping/prep presentation wording assertions.
+- Run `33578760840`: backend/build and browser 26/26 passed; screenshot capture then failed because `submission/capture-stage10.mjs` still waited for obsolete `Authoritative quantities` wording.
+- Run `33578904290`: 74/74 backend, build, 26/26 browser, seven captures and artifact upload all passed; final Git preservation alone failed because generated screenshot files were unstaged during `git pull --rebase`. No product defect was inferred from that preservation failure.
 
-Several `tests/web/host-ui.spec.ts` cases still locate:
+### Final verified redesign run
 
-`.surface-card` containing `Current plan`
+Workflow run: `33579287570`
 
-The redesign deliberately changed the event-summary hierarchy and removed that old cosmetic label. The behavioral assertion must remain: after event creation the visible authoritative summary must show the expected guest count/state.
+All required gates passed:
 
-Controlled resolution:
+- exact controlled source repair/corrections;
+- dependency installation;
+- **74/74 backend/application tests**;
+- production TypeScript/Vite build;
+- **26/26 browser tests** across `echo-show` and `mobile`;
+- Axe WCAG A/AA checks included in the full browser scope;
+- real preview startup;
+- seven real application state captures;
+- screenshot artifact upload;
+- final Git preservation step.
 
-- prefer a stable semantic/data/ARIA hook in the redesigned event summary; or
-- update the test to target that stable semantic contract rather than the old cosmetic wording.
+The verified corrected product was preserved by commit:
 
-Do not restore generic UI purely to satisfy an obsolete selector, and do not weaken the assertion that the event summary visibly reflects authoritative state.
+`875684e150164531c2c29e5cc591a9eab9b20cf3`
 
-Other voice and hardening/recovery browser cases continued to pass during the failed run.
+## Visual audit and baseline comparison
 
-No redesigned gallery screenshots were captured because the browser acceptance step failed before capture. Therefore the redesign has not been visually approved.
+The seven redesigned states were directly examined:
 
-## Exact next actions for a new chat
+1. event-created hero;
+2. menu confirmation;
+3. authoritative shopping;
+4. Live Mode;
+5. late-change impact;
+6. Activity receipts;
+7. mobile Live Mode.
 
-1. Open repository `jamieozzy89-cmyk/host-alexa-event-execution-agent` and branch `ui-redesign-editorial`.
-2. Read this `HANDOVER.md` before editing anything.
-3. Verify current branch head and the three redesign file hashes.
-4. Ensure `web/styles.css` is the intended redesign stylesheet with Git hash `e72283db6e46984f746e6eaa680cf7d206dc3ae2`; if not yet materialised, decompress the corrected `.ui-redesign/styles.css.gz` object and verify the hash.
-5. Fix the light-theme WCAG contrast defects while preserving the editorial palette.
-6. Establish a stable semantic event-summary hook and adjust only the obsolete cosmetic test coupling if required. Preserve the behavioral assertion.
-7. Run `npm ci`.
-8. Run `npm test` and require **74/74**.
-9. Run `npm run build:web`.
-10. Run the full unchanged functional browser scope in both projects:
-   `npx playwright test tests/web/host-ui.spec.ts tests/web/hardening-ui.spec.ts tests/web/voice-ui.spec.ts --project=echo-show --project=mobile`
-11. Require **26/26 browser tests** including Axe. Do not accept partial success.
-12. Only after the gate is fully green, capture redesigned states from the real application.
-13. Visually audit those captures against the actual user goal: materially less generic/AI-designed and more purpose-built for hosting.
-14. If visually better and technically green, regenerate/update Stage 10 gallery/video materials to the redesigned UI.
-15. Remove temporary `.ui-redesign` and redesign-verification workflow scaffolding from the final release candidate only after it is no longer needed for recovery/verification.
-16. Update this handover again before any merge/promotion.
+They were then compared against the exact preserved Stage 10 baseline screenshots from the prior Stage 10 package rather than from memory.
+
+Baseline evidence came from the prior successful Stage 10 package run `33569914789`, artifact `9824535162`.
+
+The comparative visual gate passed. The redesign is materially clearer than the baseline in:
+
+- information hierarchy;
+- confirmation emphasis;
+- shopping quantity scanning;
+- Live Mode task focus;
+- late-change impact scanning;
+- Activity receipt readability;
+- mobile task execution.
+
+No release-blocking visual defect was found in the seven-state audit.
+
+The redesign may therefore be treated as **accepted on `ui-redesign-editorial` as the verified release candidate**. This does not mean it has been promoted to `main`.
+
+## Regenerated Stage 10 presentation evidence
+
+### Gallery
+
+Stage 10 capture workflow was routed to `ui-redesign-editorial` without changing its existing test/build/capture method.
+
+Successful redesigned capture run:
+
+- run `33579445997`;
+- application/build reverified;
+- seven redesigned screenshots captured and validated;
+- screenshots committed as `dd585edbffa272053c8b2560612ac9b5de050515`.
+
+The gallery export was then run from the committed redesigned screenshot set:
+
+- run `33579527395`;
+- artifact: `host-stage10-gallery`;
+- artifact ID: `9827869140`;
+- artifact SHA-256 digest: `64a839e361c10f0d61be4b9f788bebdb243de0af42aba4ed32e970328feb35c8`;
+- seven PNG files validated.
+
+### Demo source recording
+
+The Stage 10 demo workflow was routed to `ui-redesign-editorial`.
+
+The first routed run correctly failed because the recorder script itself still waited for the old `Authoritative quantities` / `Dependency-aware plan` cosmetic wording and wrote the wrong source branch to its manifest. That failed run was discarded.
+
+The recorder was corrected to use the verified semantic shopping/preparation contracts and to record `source_branch=ui-redesign-editorial`.
+
+Successful corrected recording run:
+
+- run `33579605430`;
+- application/build reverified before recording;
+- uninterrupted real-app source recording completed;
+- recording validation passed;
+- artifact: `host-stage10-demo-source-run`;
+- artifact ID: `9827919689`;
+- artifact SHA-256 digest: `c693252746d2f415bb2e546d62b91b3a624b1c9ad3aebb2d78b281265d72e6ec`.
+
+Downloaded artifact verification:
+
+- video: `host-stage10-uninterrupted-source.webm`;
+- codec: VP8;
+- resolution: 1280×800;
+- frame rate: 25 fps;
+- duration: 35.6 seconds;
+- video size: 2,942,899 bytes;
+- manifest source branch: `ui-redesign-editorial`;
+- manifest wall-clock duration: 35.60 seconds.
+
+Frames sampled across the recording showed the redesigned opening, shopping state, Live Mode, late-change analysis and closing state with intact in-app captions. No capture corruption was found.
+
+This remains a silent source recording with in-app captions, not a claim that a final narrated public video has been uploaded to Devpost.
+
+## Stage 10 presentation workflows now on redesign branch
+
+These reusable workflows are intentionally retained and now target `ui-redesign-editorial`:
+
+- `.github/workflows/stage10-capture.yml` — blob `c5d6cfe9d2331db7c686f59b9e81ac476feb4646`;
+- `.github/workflows/stage10-demo-source.yml` — blob `98594adaf0ed0be43488e09511a4a3035e894696`;
+- `.github/workflows/stage10-gallery-export.yml` — blob `381a32591dbe0bf5df30375aff890311f6405d51`.
+
+`stage10-package.yml` remains separate and was not rerouted or run as part of this redesign continuation. Do not describe a redesigned final package as produced unless that packaging step is explicitly performed and verified later.
+
+## Temporary redesign scaffolding cleanup
+
+After technical verification, visual comparison, screenshot regeneration and demo regeneration were all preserved, the temporary recovery/verification scaffolding was removed as required:
+
+- `.ui-redesign/styles.css.gz` removed;
+- `.ui-redesign/trigger` removed;
+- `.github/workflows/materialize-ui-redesign-style.yml` removed;
+- `.github/workflows/ui-redesign-verify.yml` removed.
+
+The reusable Stage 10 presentation workflows were not removed.
+
+Cleanup head immediately before this handover update:
+
+`99655711296106ee7bae81c702904da24ff2e933`
+
+## Submission material retained in Git
+
+Under `submission/` the branch retains:
+
+- `DEVPOST_STAGE10_DRAFT.md`;
+- `DEVPOST_FIELD_MAP_STAGE10.md`;
+- `PRODUCT_FEEDBACK_STAGE10.md`;
+- `FRICTION_LOG_STAGE10.md`;
+- `DEMO_VIDEO_SCRIPT_STAGE10.md`;
+- `DEMO_NARRATION_60SEC_STAGE10.md`;
+- `SCREENSHOT_SHOTLIST_STAGE10.md`;
+- `GALLERY_INDEX_STAGE10.md`;
+- `OPEN_SOURCE_MINI_EVIDENCE.md`;
+- Stage 10 handover files;
+- the seven redesigned gallery PNGs;
+- the scripts required to capture the gallery and regenerate the source recording.
+
+Previously established submission decisions remain:
+
+- tagline: `An Alexa+ hosting agent that executes menu, shopping and prep while tracking what actually happened.`
+- strongest gallery lead: Live Mode;
+- six-image gallery order: Live Mode -> late-change impact -> Activity receipts -> authoritative shopping -> event-created -> mobile Live;
+- menu-confirmation image retained as reserve;
+- final public demo video must remain under three minutes.
+
+Hosted deployment remains unresolved/optional for the simulated Alexa+ route. Do not fabricate a live URL.
 
 ## Current acceptance boundaries
 
-Do not claim yet:
+Verified now:
 
-- redesigned UI accepted;
-- redesign browser suite 26/26;
-- redesigned screenshots approved;
-- redesign promoted to Stage 10/main;
-- hosted deployment live;
-- AWS Builder integration implemented;
+- redesigned branch product corrections preserved;
+- 74/74 backend/application gate passed;
+- production build passed;
+- 26/26 full browser gate passed including Axe scope;
+- redesigned seven-state gallery captured and visually audited;
+- exact baseline comparison passed;
+- redesigned gallery committed and exported;
+- redesigned uninterrupted demo source recording regenerated and validated;
+- temporary redesign verification/recovery scaffolding removed.
+
+Still **not** performed or verified:
+
+- merge/promotion of redesign to `main`;
+- replacement of Stage 09 as the public accepted branch state;
+- redesigned final Stage 10 package generation;
+- hosted deployment/live public URL;
+- AWS Builder integration;
 - real checkout/payment;
 - Alexa hardware certification;
-- final Devpost submission completed.
+- final narrated/public demo upload;
+- final Devpost submission.
 
-Verified accepted public state remains Stage 09 on `main`. Stage 10 submission content is substantially prepared. The active engineering task is to finish and verify the editorial UI redesign without breaking the product.
+## Exact continuation instruction for the next chat
+
+1. Use branch `ui-redesign-editorial` and read this file first.
+2. Treat the editorial redesign itself as a verified branch release candidate; do not repeat the old contrast/test-repair work unless new evidence shows a regression.
+3. Do not merge/promote merely because the redesign passed. Promotion/release-state changes require an explicit current user instruction.
+4. If the user next authorises packaging, promotion, deployment, AWS work, or final submission work, read the controlling Stage 10 files/workflows for that specific action before changing state.
+5. Preserve the 74/74 + build + 26/26 behavioral/accessibility standard for any later product change.
+6. Update this handover again after the next substantive project stage.
 
 ## Git-only continuation statement
 
-This branch plus this handover contains the source-controlled state needed for a new chat to continue the product/redesign work without this conversation. A new chat needs GitHub access to the repository, must use `ui-redesign-editorial`, and must follow the exact continuation sequence above.
-
-Binary media that existed only in the previous sandbox is not guaranteed to be recoverable from Git; it can be regenerated after the redesign from the repository-controlled application journey. That does not block engineering continuation from Git alone.
+The repository branch and this handover now contain the source-controlled engineering state needed to continue without the previous chat. The redesigned gallery PNGs are committed in Git. The successful demo source recording is preserved as GitHub Actions artifact `9827919689` for its retention period and can also be regenerated from the corrected repository-controlled script. No previous sandbox-only binary is required to continue engineering work.
