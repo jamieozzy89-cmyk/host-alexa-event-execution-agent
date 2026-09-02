@@ -1,7 +1,7 @@
 name: Stage 10 demo source recording
 on:
   push:
-    branches: [ui-redesign-editorial]
+    branches: [main]
     paths:
       - '.stage10-demo-trigger'
 permissions:
@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ui-redesign-editorial
+          ref: main
       - name: Install dependencies and Chromium
         run: |
           npm ci --ignore-scripts
