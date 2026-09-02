@@ -63,6 +63,7 @@ export { GoalDirectedHostAgentOrchestrator } from "../agent/goal-orchestrator.js
 export { planLowRiskWorkflow, runLowRiskWorkflow } from "../agent/workflow.js";
 export type {
   AutomaticWorkflowTool,
+  WorkflowConfirmationBoundary,
   WorkflowExecutionRecord,
   WorkflowGoal,
   WorkflowPlan,
