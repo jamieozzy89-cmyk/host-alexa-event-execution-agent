@@ -75,7 +75,8 @@ test("spoken menu option choice uses the existing confirmation-gated commit path
   let loaded = await persistence.load("agent-dinner");
   assert.equal(loaded?.state.event.selectedMenuId, undefined);
   const confirmed = await agent.handleText("voice-menu", "yes");
-  assert.equal(confirmed.status, "ok");
+  assert.equal(confirmed.status, "needs_input");
+  assert.match(confirmed.question, /ingredients do you already have/i);
   loaded = await persistence.load("agent-dinner");
   assert.ok(loaded?.state.event.selectedMenuId);
 });
