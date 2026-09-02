@@ -128,21 +128,30 @@ export class GoalDirectedHostAgentOrchestrator {
       ? (prepRecord.data as { tasks?: Record<string, PreparationTask> }).tasks
       : undefined;
     const tasks = taskMap ? Object.values(taskMap) : undefined;
+    const completedCards: AgentReply["cards"] = [];
+    if (shopping) completedCards.push(shoppingCard(shopping));
+    if (tasks) completedCards.push(prepCard(tasks));
 
     if (run.stopReason === "failure") {
       const failed = run.records.at(-1);
+      const completedPrefix = shoppingRecord || prepRecord
+        ? "Earlier low-risk work in this run remains completed and is shown below. "
+        : "";
       return reply({
         status: "error",
-        speech: "I stopped at the failed step. I did not treat any later work as completed.",
+        speech: `${completedPrefix}I stopped at the failed step. I did not treat any later work as completed.`,
         eventId,
-        cards: [{
-          type: "error",
-          title: "Workflow stopped",
-          body: failed?.errorCode
-            ? `The next safe step failed (${failed.errorCode}). Later steps were not run.`
-            : "The next safe step failed. Later steps were not run.",
-          retryable: true,
-        }],
+        cards: [
+          ...completedCards,
+          {
+            type: "error",
+            title: "Workflow stopped",
+            body: failed?.errorCode
+              ? `The next safe step failed (${failed.errorCode}). Later steps were not run.`
+              : "The next safe step failed. Later steps were not run.",
+            retryable: true,
+          },
+        ],
         actions: [{ type: "request", label: "Check status", request: "status" }],
       });
     }
@@ -152,12 +161,33 @@ export class GoalDirectedHostAgentOrchestrator {
         status: "error",
         speech: "The event kept changing while I was continuing the plan. I refreshed current state and stopped rather than replaying work against a moving revision.",
         eventId,
-        cards: [{
-          type: "error",
-          title: "Plan changed while updating",
-          body: "Host refreshed authoritative state after revision conflicts and stopped. No material action was replayed.",
-          retryable: true,
-        }],
+        cards: [
+          ...completedCards,
+          {
+            type: "error",
+            title: "Plan changed while updating",
+            body: "Host refreshed authoritative state after revision conflicts and stopped. No material action was replayed.",
+            retryable: true,
+          },
+        ],
+        actions: [{ type: "request", label: "Check status", request: "status" }],
+      });
+    }
+
+    if (run.stopReason === "step_limit") {
+      return reply({
+        status: "error",
+        speech: "I reached the bounded automatic-work limit and stopped. Completed low-risk work remains recorded; I did not continue beyond the configured safety bound.",
+        eventId,
+        cards: [
+          ...completedCards,
+          {
+            type: "error",
+            title: "Automatic workflow paused",
+            body: "Host reached its bounded low-risk step limit and stopped before attempting more work.",
+            retryable: true,
+          },
+        ],
         actions: [{ type: "request", label: "Check status", request: "status" }],
       });
     }
@@ -165,10 +195,6 @@ export class GoalDirectedHostAgentOrchestrator {
     if (run.requiredInput?.field === "inventory_review") {
       return this.inventoryQuestion(conversationId);
     }
-
-    const cards: AgentReply["cards"] = [];
-    if (shopping) cards.push(shoppingCard(shopping));
-    if (tasks) cards.push(prepCard(tasks));
 
     const projection = run.projection;
     const openShopping = projection?.shopping.unresolvedLines
@@ -197,7 +223,7 @@ export class GoalDirectedHostAgentOrchestrator {
       status: "ok",
       speech: pieces.join(" "),
       eventId,
-      cards,
+      cards: completedCards,
       actions,
     });
   }
@@ -279,7 +305,11 @@ export class GoalDirectedHostAgentOrchestrator {
 
     const projection = await this.projectionReader.readProjection(eventId, { inventoryConfirmed: false });
     if (!projection) return result;
-    if (projection.shopping.totalLines > 0 || projection.inventoryCoverage.confirmedItemCount > 0) {
+
+    // An existing shopping plan proves inventory review advanced far enough for
+    // authoritative reconciliation. Merely having some recorded inventory does
+    // not prove the customer finished reviewing all required ingredients.
+    if (projection.shopping.totalLines > 0) {
       workflow.inventoryReviewConfirmed = true;
       if (projection.preparation.totalTasks === 0) {
         const continued = await this.continueLowRiskWorkflow(conversationId);
@@ -295,6 +325,7 @@ export class GoalDirectedHostAgentOrchestrator {
       }
       return result;
     }
+
     if (projection.menu) return this.inventoryQuestion(conversationId, result.speech, result.cards);
     return result;
   }
