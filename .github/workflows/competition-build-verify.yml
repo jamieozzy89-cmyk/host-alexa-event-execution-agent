@@ -51,7 +51,11 @@ jobs:
           set -euo pipefail
           mkdir -p /tmp/host-competition-safe
           git archive --format=zip --output=/tmp/host-competition-safe/HOST_COMPETITION_BUILD_SOURCE.zip HEAD
-          sha256sum /tmp/host-competition-safe/HOST_COMPETITION_BUILD_SOURCE.zip > /tmp/host-competition-safe/HOST_COMPETITION_BUILD_SOURCE.zip.sha256
+          (
+            cd /tmp/host-competition-safe
+            sha256sum HOST_COMPETITION_BUILD_SOURCE.zip > HOST_COMPETITION_BUILD_SOURCE.zip.sha256
+            sha256sum -c HOST_COMPETITION_BUILD_SOURCE.zip.sha256
+          )
           printf 'source_branch=host-competition-build\nsource_commit=%s\ncreated_utc=%s\n' "$(git rev-parse HEAD)" "$(date -u +%FT%TZ)" > /tmp/host-competition-safe/SOURCE_PROVENANCE.txt
 
       - name: Upload controlled source snapshot
