@@ -1,8 +1,7 @@
 import type { PreparationTask, ShoppingItem } from "../domain/types.js";
-import type { HostToolResult, ProposedMenusView } from "../tools/types.js";
 import { HostToolRuntime } from "../tools/runtime.js";
 import { HeuristicIntentInterpreter } from "./interpreter.js";
-import { menuCard, prepCard, shoppingCard } from "./presentation.js";
+import { prepCard, shoppingCard } from "./presentation.js";
 import { HostAgentOrchestrator } from "./orchestrator.js";
 import type {
   AgentAction,
@@ -30,11 +29,11 @@ function shorten(value: string, max = 34): string {
 function reply(params: {
   status: AgentReply["status"];
   speech: string;
-  displayText?: string;
-  cards?: AgentReply["cards"];
-  actions?: AgentAction[];
-  eventId?: string;
-  question?: string;
+  displayText?: string | undefined;
+  cards?: AgentReply["cards"] | undefined;
+  actions?: AgentAction[] | undefined;
+  eventId?: string | undefined;
+  question?: string | undefined;
 }): AgentReply {
   return {
     status: params.status,
@@ -55,7 +54,7 @@ function reply(params: {
  */
 export class GoalDirectedHostAgentOrchestrator {
   private readonly base: HostAgentOrchestrator;
-  private readonly projectionReader?: OperatingProjectionReader;
+  private readonly projectionReader: OperatingProjectionReader | undefined;
   private readonly workflowState = new Map<string, GoalConversationState>();
 
   constructor(
@@ -112,21 +111,6 @@ export class GoalDirectedHostAgentOrchestrator {
   private looksLikeAllowedInterruption(text: string): boolean {
     const normalized = text.toLowerCase();
     return /\b(?:another\s+guest|one\s+more\s+guest|guest\s+(?:is|will|can|can't|cannot)|vegan|vegetarian|allerg|status|what(?:'s| is)\s+(?:the\s+)?status|history|what\s+changed|help)\b/.test(normalized);
-  }
-
-  private async inventoryReviewKnown(conversationId: string): Promise<boolean> {
-    const workflow = this.state(conversationId);
-    if (workflow.inventoryReviewConfirmed) return true;
-    const eventId = this.base.getConversationState(conversationId).eventId;
-    if (!eventId || !this.projectionReader) return false;
-    const projection = await this.projectionReader.readProjection(eventId, { inventoryConfirmed: false });
-    if (!projection) return false;
-    if (projection.shopping.totalLines > 0 || projection.inventoryCoverage.confirmedItemCount > 0) {
-      workflow.inventoryReviewConfirmed = true;
-      workflow.awaitingInventoryReview = false;
-      return true;
-    }
-    return false;
   }
 
   private workflowReply(conversationId: string, run: WorkflowRunResult): AgentReply {
@@ -246,31 +230,13 @@ export class GoalDirectedHostAgentOrchestrator {
   }
 
   private async autoSurfaceMenus(conversationId: string, eventReply: AgentReply): Promise<AgentReply> {
-    const eventId = eventReply.eventId;
-    if (!eventId) return eventReply;
-    const menuResult = await this.runtime.execute({
-      name: "propose_menu",
-      input: { eventId, maxOptions: 3 },
-    }) as HostToolResult<ProposedMenusView>;
-    if (!menuResult.ok) {
-      return reply({
-        status: "error",
-        speech: `${eventReply.speech} The event is saved, but I couldn't prepare menu choices yet.`,
-        eventId,
-        cards: [
-          ...eventReply.cards,
-          { type: "error", title: "Menu ideas need attention", body: "The event is saved, but menu proposals could not be prepared.", retryable: menuResult.error.retryable },
-        ],
-        actions: [{ type: "request", label: "Try menu ideas again", request: "menu" }],
-      });
-    }
-
+    if (!eventReply.eventId) return eventReply;
     const menuReply = await this.base.handleText(conversationId, "menu ideas");
     if (menuReply.status === "error") {
       return reply({
         status: "error",
         speech: `${eventReply.speech} ${menuReply.speech}`,
-        eventId,
+        eventId: eventReply.eventId,
         cards: [...eventReply.cards, ...menuReply.cards],
         actions: menuReply.actions,
       });
@@ -279,7 +245,7 @@ export class GoalDirectedHostAgentOrchestrator {
     return reply({
       status: "ok",
       speech: `${eventReply.speech} ${menuReply.speech}`,
-      eventId,
+      eventId: eventReply.eventId,
       cards: [...eventReply.cards, ...menuReply.cards],
       actions: menuReply.actions,
     });
@@ -318,9 +284,13 @@ export class GoalDirectedHostAgentOrchestrator {
       if (projection.preparation.totalTasks === 0) {
         const continued = await this.continueLowRiskWorkflow(conversationId);
         return reply({
-          ...continued,
+          status: continued.status,
           speech: `${result.speech} ${continued.speech}`,
+          displayText: `${result.displayText} ${continued.displayText}`,
           cards: [...result.cards, ...continued.cards],
+          actions: continued.actions,
+          eventId: continued.eventId ?? result.eventId,
+          question: continued.question,
         });
       }
       return result;
