@@ -46,18 +46,14 @@ export async function createEvent(agent, conversation = "c1") {
 }
 
 export async function chooseFirstMenu(agent, conversation = "c1") {
-  const state = agent.getConversationState(conversation);
-  let menuReply;
-  if (state.lastMenus?.length) {
-    menuReply = await agent.handleText(conversation, "Show me menu ideas");
-  } else {
-    menuReply = await agent.handleText(conversation, "Show me menu ideas");
-  }
+  const menuReply = await agent.handleText(conversation, "Show me menu ideas");
   const action = menuReply.actions.find((entry) => entry.type === "choose_menu");
   if (!action) throw new Error("no menu action");
   const confirmation = await agent.handleAction(conversation, action);
   if (confirmation.status !== "needs_confirmation") throw new Error("menu did not require confirmation");
-  return agent.handleAction(conversation, { type: "confirm_pending", label: "Confirm" });
+  const committed = await agent.handleAction(conversation, { type: "confirm_pending", label: "Confirm" });
+  if (committed.status !== "needs_input") throw new Error("menu commit did not stop for inventory review");
+  return completeInventoryReview(agent, conversation);
 }
 
 export async function completeInventoryReview(agent, conversation = "c1") {
@@ -68,8 +64,7 @@ export async function completeInventoryReview(agent, conversation = "c1") {
 
 export async function prepareShopping(agent, conversation = "c1") {
   await createEvent(agent, conversation);
-  await chooseFirstMenu(agent, conversation);
-  const shopping = await completeInventoryReview(agent, conversation);
+  const shopping = await chooseFirstMenu(agent, conversation);
   const products = await agent.handleText(conversation, "Find products");
   if (products.status !== "ok") throw new Error(`products failed: ${products.speech}`);
   return { shopping, products };
