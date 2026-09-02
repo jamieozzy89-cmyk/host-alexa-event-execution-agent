@@ -94,21 +94,21 @@ async function say(page: Page, text: string, expected: RegExp): Promise<void> {
   await expect(page.locator('[data-voice-status="listening"]')).toBeVisible();
 }
 
-test("voice-only core journey reaches authoritative execution and receipts after one activation", async ({ page }) => {
+test("voice-only Phase C journey reaches goal-directed execution, late-change confirmation and receipts after one activation", async ({ page }) => {
   await openVoiceClean(page);
   await startVoice(page);
 
-  await say(page, PRIMARY_REQUEST, /Done\. I've set up/i);
-  await say(page, "menu ideas", /Option 1:.*Say choose option one, two or three/i);
+  await say(page, PRIMARY_REQUEST, /Done\. I've set up.*Option 1:.*choose option one/i);
   await say(page, "choose option one", /Use .* as the committed menu\?/i);
-  await say(page, "yes", /Menu saved/i);
-  await say(page, "shopping list", /Shopping list ready/i);
+  await say(page, "yes", /Menu saved\..*required ingredients do you already have/i);
+  await say(page, "I don't have any of them", /reconciled shopping.*built the run sheet/i);
   await say(page, "find products", /Nothing has been purchased/i);
   await say(page, "checkout", /simulated checkout/i);
   await say(page, "yes", /Simulated checkout complete/i);
-  await say(page, "prep plan", /Prep plan ready/i);
   await say(page, "what's next", /Next:/i);
   await say(page, "done", /Done\./i);
+  await say(page, "We have another guest and they're vegan", /checked the change without applying it/i);
+  await say(page, "yes", /Updated\. I kept unaffected work/i);
   await say(page, "did you actually", /Latest:/i);
 
   await expect(page.locator(".message.user")).toHaveCount(12);
@@ -119,8 +119,7 @@ test("spoken no cancels a pending material action without requiring touch confir
   await openVoiceClean(page);
   await startVoice(page);
 
-  await say(page, PRIMARY_REQUEST, /Done\. I've set up/i);
-  await say(page, "menu ideas", /Option 1:/i);
+  await say(page, PRIMARY_REQUEST, /Option 1:/i);
   await say(page, "choose option one", /committed menu\?/i);
   await say(page, "no", /Cancelled\. I haven't changed the plan/i);
   await say(page, "shopping list", /menu/i);
