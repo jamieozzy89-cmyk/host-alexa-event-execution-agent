@@ -116,13 +116,13 @@ function stop(
 }
 
 function candidate(
-  projection: OperatingProjection,
+  baseRevision: number,
   completedSteps: readonly WorkflowExecutionRecord[],
   step: WorkflowStep,
 ): WorkflowPlan {
   return {
     goal: "advance_event_preparation",
-    baseRevision: projection.event.revision,
+    baseRevision,
     candidateSteps: [step],
     completedSteps: copyRecords(completedSteps),
   };
@@ -139,6 +139,7 @@ export function planLowRiskWorkflow(
   completedSteps: readonly WorkflowExecutionRecord[] = [],
 ): WorkflowPlan {
   if (!projection?.event) return stop("missing_event", projection, completedSteps);
+  const baseRevision = projection.event.revision;
 
   if (projection.attention.kind === "confirmation") {
     return stop(
@@ -167,17 +168,17 @@ export function planLowRiskWorkflow(
         prompt: "Before I calculate shopping, tell me what required ingredients you already have. If you have none of them, say that explicitly. Host will not guess quantities.",
       });
     }
-    return candidate(projection, completedSteps, {
+    return candidate(baseRevision, completedSteps, {
       tool: "build_shopping_plan",
-      expectedRevision: projection.event.revision,
+      expectedRevision: baseRevision,
       reason: "The menu is committed and inventory review is explicitly complete, so authoritative shopping can be reconciled.",
     });
   }
 
   if (projection.preparation.totalTasks === 0) {
-    return candidate(projection, completedSteps, {
+    return candidate(baseRevision, completedSteps, {
       tool: "build_preparation_plan",
-      expectedRevision: projection.event.revision,
+      expectedRevision: baseRevision,
       reason: "The shopping plan exists and no preparation graph exists, so the dependency-aware run sheet can be built without a material customer decision.",
     });
   }
