@@ -28,7 +28,7 @@ Selected mini challenge:
 
 **Open Source**
 
-Current completed rebuild stages:
+Completed rebuild stages:
 
 - **Phase A — product specification, source-control cleanup, architecture audit and implementation map:** complete.
 - **Phase B — read-only OperatingProjection, derived lifecycle and deterministic Attention Engine:** complete and verified.
@@ -86,21 +86,19 @@ Phase C report + self-contained handover preservation head:
 
 `5c3ff6478a3605798bad3e8808cdca7e9421b2ab`
 
-That preservation head passed the complete competition-build workflow in run:
+Phase C closure-record head:
 
-`33673183155`
+`7a3a3acaae1d9bfa847af5567f43b92bd8408cfa`
 
-Job:
+Source-artifact portability hardening commit:
 
-`100391477786`
-
-Conclusion:
-
-**success**
-
-This closure-record update is documentation-only. As a permanent control, a future continuation must still fetch the then-current `host-competition-build` head and require a successful matching-head competition-build run before changing product code.
+`ddcc0c542a6f89f71818ff0f64dcabe61da5d986`
 
 No Phase C work was merged to `main`.
+
+Permanent exact-head rule:
+
+> Before changing product code, fetch the current development head and require the newest successful competition-build workflow to have that exact `head_sha`. An earlier green run is not proof of a later head.
 
 ---
 
@@ -139,7 +137,7 @@ The current domain/tool/persistence engine remains the execution foundation.
 Protected capabilities include:
 
 - typed event state and revisions;
-- start/timezone/guest count/budget/currency;
+- event start/timezone/guest count/budget/currency;
 - confirmed constraints/preferences;
 - confirmation-gated menu commitment;
 - exact inventory quantities;
@@ -211,7 +209,7 @@ Baseline demo-source artifact:
 - ID `9828582371`;
 - SHA-256 `b27c910ecec716437e8a935b0c51b0121395d79588364fe0e1d2ff9312fdee02`.
 
-That old demo source is not the final public competition video.
+The old demo source is not the final public competition video.
 
 ---
 
@@ -410,7 +408,7 @@ The Phase C runner cannot automatically execute:
 - `planLowRiskWorkflow()`;
 - `runLowRiskWorkflow()`.
 
-The plan is ephemeral and not persisted as HostState.
+The plan is ephemeral and is not persisted as HostState.
 
 It records:
 
@@ -503,7 +501,7 @@ Explicit zero-inventory language such as:
 
 is the deterministic completion route implemented in Phase C.
 
-After that explicit review Host automatically runs the allowed shopping→prep sequence, re-reading authoritative projection between mutations.
+After explicit review Host automatically runs the allowed shopping→prep sequence, re-reading authoritative projection between mutations.
 
 ### Interruptions
 
@@ -526,7 +524,7 @@ Dedicated restart tests protect this rule.
 
 ## Browser path
 
-`web/runtime.ts` now constructs the goal-directed orchestrator with:
+`web/runtime.ts` constructs the goal-directed orchestrator with:
 
 - the same `HostToolRuntime`;
 - same persistence adapter;
@@ -576,6 +574,55 @@ Fixed so partial inventory alone never advances the review. Existing authoritati
 The richer plan exposed a compiler error because `OperatingProjection.event` is optional by type.
 
 Fixed by narrowing once and passing the verified revision explicitly. No guessed revision and no non-null shortcut was introduced.
+
+## Source-artifact checksum portability
+
+After Phase C closure was otherwise green, the downloaded workflow artifact was audited outside GitHub Actions.
+
+The source bytes were intact, but the generated `.sha256` file contained the runner's absolute path:
+
+`/tmp/host-competition-safe/HOST_COMPETITION_BUILD_SOURCE.zip`
+
+That made a normal downloaded `sha256sum -c HOST_COMPETITION_BUILD_SOURCE.zip.sha256` fail because the original runner path no longer existed.
+
+This was treated as a preservation-control defect rather than ignored.
+
+Commit:
+
+`ddcc0c542a6f89f71818ff0f64dcabe61da5d986`
+
+changed the workflow so snapshot assembly now:
+
+1. creates the source ZIP;
+2. changes into the artifact directory;
+3. writes a checksum against relative filename `HOST_COMPETITION_BUILD_SOURCE.zip`;
+4. runs `sha256sum -c` inside the workflow before upload;
+5. only then uploads the artifact.
+
+Verification run for that hardening commit:
+
+`33673679637`
+
+Result:
+
+**success**
+
+Downloaded artifact from that run:
+
+- artifact ID `9863528435`;
+- outer SHA-256 `c6e0f05ba06e865e4b959cec35c094d5b603ffa4d5635a9051495e2565c6baf4`;
+- source commit in provenance `ddcc0c542a6f89f71818ff0f64dcabe61da5d986`;
+- inner source ZIP SHA-256 `b408a1bf40e99001c1beb65e91d7b03bbcfe0014ba6b9390beec3cd3a04f17ce`.
+
+The downloaded corrected artifact was independently extracted and checked. Its checksum file contains only the relative source-ZIP filename and:
+
+`sha256sum -c HOST_COMPETITION_BUILD_SOURCE.zip.sha256`
+
+returned:
+
+`HOST_COMPETITION_BUILD_SOURCE.zip: OK`
+
+This portable self-verification behavior is now part of the preservation workflow control.
 
 ---
 
@@ -628,7 +675,27 @@ Passed:
 - controlled source snapshot assembly;
 - controlled source artifact upload.
 
-Phase C-specific tests 88–99 cover:
+## Successful Phase C closure-record head
+
+Head:
+
+`7a3a3acaae1d9bfa847af5567f43b92bd8408cfa`
+
+Run:
+
+`33673476047`
+
+Passed every workflow stage:
+
+- backend/application tests;
+- production dependency audit;
+- production web build;
+- Echo/mobile browser gate;
+- source snapshot assembly/upload.
+
+## Phase C-specific application coverage
+
+Tests 88–99 cover:
 
 88. automatic menu surfacing;
 89. inventory stop after confirmed menu;
@@ -660,37 +727,9 @@ Browser coverage includes:
 - local-data deletion/privacy behavior;
 - no unexpected cross-origin deterministic application requests.
 
-## Phase C preservation artifact
-
-From run `33673183155`:
-
-Artifact name:
-
-`host-competition-build-source`
-
-Artifact ID:
-
-`9863338011`
-
-Final size:
-
-`789332` bytes
-
-Outer artifact SHA-256:
-
-`a66affe8ae536a0862f43651457276d0239ebb10d16871800e67eaa67b5ad984`
-
-Artifact contains:
-
-1. `HOST_COMPETITION_BUILD_SOURCE.zip` created from `git archive HEAD`;
-2. `HOST_COMPETITION_BUILD_SOURCE.zip.sha256`;
-3. `SOURCE_PROVENANCE.txt` containing source branch, commit and creation time.
-
-The preservation artifact therefore contains the Phase C code, verification report and self-contained pre-closure handover state at `5c3ff647…`.
-
 ---
 
-# Verification workflow
+# Verification and source-preservation workflow
 
 Workflow file:
 
@@ -707,14 +746,24 @@ Required stages:
 7. `npm run build:web`;
 8. `npx playwright test`;
 9. tracked-source ZIP assembly;
-10. SHA-256 + source provenance;
-11. controlled artifact upload.
+10. relative source-ZIP SHA-256 generation;
+11. in-workflow `sha256sum -c` verification;
+12. source provenance assembly;
+13. controlled artifact upload.
 
 Concurrency cancellation is enabled so obsolete superseded pushes do not become the controlling verification result.
 
 Permanent rule:
 
 > Never treat an earlier green run as proof of a later branch head. Match the claimed commit to its own successful workflow run.
+
+For a downloaded artifact, also require:
+
+1. outer downloaded ZIP SHA-256 equals GitHub artifact digest;
+2. extract the three artifact files;
+3. `SOURCE_PROVENANCE.txt` identifies the expected source branch/commit;
+4. run `sha256sum -c HOST_COMPETITION_BUILD_SOURCE.zip.sha256` in the extracted directory;
+5. require `HOST_COMPETITION_BUILD_SOURCE.zip: OK`.
 
 ---
 
@@ -761,7 +810,7 @@ Do **not** claim any of these are implemented/final:
 
 # Next phase — Phase D
 
-Next authorised development phase after exact-head re-verification is:
+Next substantive development phase after exact-head re-verification is:
 
 **Phase D — conversational fact acquisition**
 
@@ -785,9 +834,9 @@ Before editing Phase D code:
 4. audit current interpreter/model/orchestrator/fact schemas and tests;
 5. define the exact fact-acquisition contract before implementation;
 6. retain all existing confirmation/revision/persistence controls;
-7. add focused tests before claiming any new conversational behavior;
-8. run the full competition-build gate again after substantive changes;
-9. update verification report/handover and preserve a new controlled source artifact.
+7. add focused tests before claiming new conversational behavior;
+8. run the full competition-build gate after substantive changes;
+9. update verification/handover and preserve a new controlled source artifact.
 
 Do not start Phase E/F/UI/AWS/submission work as a shortcut around Phase D.
 
@@ -800,9 +849,9 @@ Before relying on this file:
 - fetch `host-competition-build` head;
 - fetch the latest competition-build workflow run;
 - require `head_sha` to match the current branch head;
-- require successful backend/application tests, dependency audit, production build, browser gate and source artifact upload;
+- require successful backend/application tests, dependency audit, production build, browser gate, self-verified checksum assembly and source artifact upload;
 - fetch `main` and confirm no unauthorised promotion occurred.
 
-If any of those checks fail or point at a different head, do not assume the current branch is verified. Re-establish the last matching verified state first.
+If any check fails or points at a different head, do not assume the current branch is verified. Re-establish the last matching verified state first.
 
-Phase C itself is **closed and verified**; the next substantive product work is Phase D.
+Phase C is **closed and verified**. The next substantive product work is Phase D.
