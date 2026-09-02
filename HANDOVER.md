@@ -2,77 +2,15 @@
 
 Updated: 2 September 2026
 
-## One-line continuation rule
+## Continuation rule
 
-Continue only from repository `jamieozzy89-cmyk/host-alexa-event-execution-agent`, branch `host-competition-build`. Git is the controlling source. Before changing product code, read this handover plus `docs/HOST_COMPETITION_PRODUCT_SPEC_V1.md`, `docs/HOST_COMPETITION_IMPLEMENTATION_MAP_V1.md`, and the current phase verification report. `main` is the preserved accepted baseline and must not be changed, merged or promoted automatically.
+Continue only from repository `jamieozzy89-cmyk/host-alexa-event-execution-agent`, branch `host-competition-build`. Git is the controlling source. Before changing product code, read this handover, `docs/HOST_COMPETITION_PRODUCT_SPEC_V1.md`, `docs/HOST_COMPETITION_IMPLEMENTATION_MAP_V1.md`, and the latest phase verification report.
+
+`main` is the preserved accepted baseline. Do **not** merge, promote, rebase onto, or otherwise change `main` without an explicit current user instruction.
 
 ---
 
 # Current controlled state
-
-The project is a competition-grade rebuild of **Host: Alexa+ Event Execution Agent** around the already-proven authoritative execution engine.
-
-Completed development stages:
-
-- **Phase A — product specification, source-control cleanup, direct architecture audit and implementation map:** complete.
-- **Phase B — read-only OperatingProjection, derived customer lifecycle and deterministic Attention Engine:** complete and verified.
-- **Phase C — bounded goal-directed workflow orchestration:** product code complete and full code-head gate passed. This handover/documentation preservation head must still pass the same full gate before Phase C is finally closed.
-
-The next product stage after final Phase C preservation verification is:
-
-**Phase D — conversational fact acquisition.**
-
-Do not begin Phase D until the exact final Phase C preservation head has passed the full branch gate and a new controlled source artifact has been preserved.
-
-Permanent integrity rule:
-
-> Nothing becomes done because model text, Alexa speech, UI copy or an external client says it happened. Only validated Host tool/domain state and verified external results establish completion.
-
-Controlled execution path:
-
-`customer goal -> interpretation/planning -> validated Host tool -> domain validation -> persistence/external result -> receipt/audit -> customer response`
-
-There is still one authoritative mutation path. The Phase B read model and Phase C planner/orchestrator do not create alternate domain mutation routes.
-
----
-
-# Repository and source-control state
-
-Repository:
-
-`jamieozzy89-cmyk/host-alexa-event-execution-agent`
-
-Preserved accepted baseline branch:
-
-`main`
-
-Preserved accepted baseline commit:
-
-`65a664ba60093991e47766c80cb5c365847f04a9`
-
-Competition development branch:
-
-`host-competition-build`
-
-Phase B final verified preservation head:
-
-`14c93ebfc5e425db6ee970cf5a5b71d0fcd6c5da`
-
-Phase C successfully verified **code head**:
-
-`01f6a02ba58d033855445421dc390d8d275486b6`
-
-Phase C verification-report commit:
-
-`1f426892c25abe7cad4e5f5fc9d15a51516a66f0`
-
-This handover commit is later than the successful Phase C code-head run and therefore requires its own full preservation gate before Phase C is called closed.
-
-No automatic merge to `main` is authorised. Future promotion requires an explicit current user instruction after the competition build passes its later release gates.
-
----
-
-# Product and competition target
 
 Project:
 
@@ -90,11 +28,85 @@ Selected mini challenge:
 
 **Open Source**
 
-AWS Builder:
+Current completed rebuild stages:
 
-**not currently claimed**. No verified AWS runtime integration exists yet.
+- **Phase A — product specification, source-control cleanup, architecture audit and implementation map:** complete.
+- **Phase B — read-only OperatingProjection, derived lifecycle and deterministic Attention Engine:** complete and verified.
+- **Phase C — bounded goal-directed workflow orchestration:** **closed and verified**.
 
-Core product mission:
+Next development stage:
+
+**Phase D — conversational fact acquisition.**
+
+Do not skip or collapse later phases from the controlling implementation map.
+
+Permanent integrity rule:
+
+> Nothing becomes done because model text, Alexa speech, UI copy or an external client says it happened. Only validated Host tool/domain state and verified external results establish completion.
+
+Controlled execution path:
+
+`customer goal -> interpretation/planning -> validated Host tool -> domain validation -> persistence/external result -> receipt/audit -> customer response`
+
+There is one authoritative mutation path. The read model and workflow planner do not create parallel truth.
+
+---
+
+# Source-control state
+
+Repository:
+
+`jamieozzy89-cmyk/host-alexa-event-execution-agent`
+
+Development branch:
+
+`host-competition-build`
+
+Protected baseline branch:
+
+`main`
+
+Protected baseline commit:
+
+`65a664ba60093991e47766c80cb5c365847f04a9`
+
+Phase B final verified preservation head:
+
+`14c93ebfc5e425db6ee970cf5a5b71d0fcd6c5da`
+
+Phase C verified product-code head:
+
+`01f6a02ba58d033855445421dc390d8d275486b6`
+
+Phase C report commit:
+
+`1f426892c25abe7cad4e5f5fc9d15a51516a66f0`
+
+Phase C report + self-contained handover preservation head:
+
+`5c3ff6478a3605798bad3e8808cdca7e9421b2ab`
+
+That preservation head passed the complete competition-build workflow in run:
+
+`33673183155`
+
+Job:
+
+`100391477786`
+
+Conclusion:
+
+**success**
+
+This closure-record update is documentation-only. As a permanent control, a future continuation must still fetch the then-current `host-competition-build` head and require a successful matching-head competition-build run before changing product code.
+
+No Phase C work was merged to `main`.
+
+---
+
+# Product mission
+
+Core mission:
 
 > Host is the execution agent responsible for carrying a home-hosting event from initial intent to verified readiness while the customer remains in control of consequential decisions.
 
@@ -102,7 +114,7 @@ Core promise:
 
 > From “people are coming over” to “everything is actually ready.”
 
-The product should continuously answer:
+Host should continuously answer:
 
 1. What is happening?
 2. What needs attention?
@@ -110,42 +122,44 @@ The product should continuously answer:
 
 Conversation is an input/explanation surface, not the final information architecture.
 
-Customer-facing target lifecycle:
+Target customer lifecycle:
 
 `INTAKE -> PLAN -> SHOP -> PREP -> LIVE -> READY -> HOSTING -> COMPLETE`
 
-READY/HOSTING are currently derived customer stages where appropriate, not invented persisted domain statuses.
+READY/HOSTING remain derived customer stages where appropriate rather than invented persisted domain statuses.
+
+AWS Builder is **not currently claimed**. There is no verified AWS runtime integration yet.
 
 ---
 
 # Protected authoritative engineering foundation
 
-The existing domain/tool/persistence engine remains the protected execution foundation.
+The current domain/tool/persistence engine remains the execution foundation.
 
-Retained capabilities include:
+Protected capabilities include:
 
 - typed event state and revisions;
-- event start/timezone/guest count/budget/currency;
+- start/timezone/guest count/budget/currency;
 - confirmed constraints/preferences;
 - confirmation-gated menu commitment;
-- inventory quantities;
+- exact inventory quantities;
 - authoritative shopping reconciliation;
 - no guessed unit conversions;
 - dependency-aware preparation graph;
 - task readiness/completion validation;
-- action receipts and audit history;
+- receipts and audit history;
 - read-only late-change impact analysis;
-- atomic confirmed change application;
+- atomic confirmed late-change application;
 - preservation of unaffected completed work where definitions remain unchanged;
-- reversible latest-safe actions;
+- latest-safe reversible actions;
 - version/checksum/domain-validated persistence;
 - primary/backup/temporary recovery;
-- pending uncommitted impacts intentionally not persisted as committed Host state;
+- pending uncommitted impacts deliberately not persisted as committed truth;
 - controlled `HostAgentOrchestrator`;
 - deterministic `HeuristicIntentInterpreter`;
-- structured model-backed interpreter seam and resilient fallback;
-- browser touch/voice routed through the same application/tool path;
-- explicit voice-unavailable fallback;
+- structured model interpreter seam and resilient deterministic fallback;
+- touch and voice through the same application/tool path;
+- voice-unavailable fallback;
 - privacy/storage/recovery/focus/accessibility hardening.
 
 Protected Host tool surface remains 17 tools:
@@ -168,29 +182,24 @@ Protected Host tool surface remains 17 tools:
 16. `get_action_history`
 17. `undo_reversible_action`
 
-A later phase may add a tool only if the capability is deliberately designed, justified, schema-controlled and tested. Do not grow the tool surface by convenience.
+Do not add a tool for convenience. A new tool requires a deliberate capability decision, strict schema, risk classification, authoritative implementation and matching tests.
 
 ---
 
-# Baseline accepted product evidence
+# Baseline evidence retained
 
-Before the competition rebuild, the promoted editorial baseline passed:
+Before the competition rebuild, the promoted editorial product passed:
 
-- backend/application: **74 passed, 0 failed**;
+- **74/74** backend/application tests;
 - production TypeScript/Vite build;
-- Playwright: **26 passed, 0 failed** across Echo-like 1280×800 and mobile 390×844;
-- Axe WCAG A/AA scope;
+- **26/26** Playwright tests across Echo-like and mobile projects;
+- automated Axe WCAG A/AA scope;
 - privacy/storage/recovery/focus/network-boundary checks;
 - seven real product-state captures and direct visual examination.
 
 Baseline refinement run:
 
-- run `33581353724`;
-- job `100096132537`.
-
-Baseline screenshot commit:
-
-`46b537fc3b79fcae20ff59bb49d5d52ccf331ff9`
+`33581353724`
 
 Baseline gallery artifact:
 
@@ -202,213 +211,193 @@ Baseline demo-source artifact:
 - ID `9828582371`;
 - SHA-256 `b27c910ecec716437e8a935b0c51b0121395d79588364fe0e1d2ff9312fdee02`.
 
-That demo artifact is a silent captioned working-app source recording, not a final public competition video.
+That old demo source is not the final public competition video.
 
 ---
 
 # Phase A — controlling design conclusions
-
-Phase A established the full competition product specification and implementation map.
 
 Controlling documents:
 
 - `docs/HOST_COMPETITION_PRODUCT_SPEC_V1.md`
 - `docs/HOST_COMPETITION_IMPLEMENTATION_MAP_V1.md`
 
-Key conclusions still control later work.
+These conclusions continue to govern later work.
 
 ## Domain reuse
 
-Event Home, lifecycle, attention, Run Sheet, Ready, receipts and much timing-health presentation should be derived over authoritative state rather than duplicated into competing persisted UI state.
+Lifecycle, attention, Event Home, Run Sheet, Ready, receipts and later timing presentation should be derived over authoritative state where possible rather than duplicated into competing persisted UI truth.
 
 ## Shopping truth
 
-Current authoritative calculation remains:
+Authoritative calculation:
 
 `required - confirmed on hand = to buy`
 
-Unit mismatch fails rather than guessing a conversion.
+Unit mismatch fails rather than guessing conversion.
 
 ## Preparation truth
 
-The existing preparation graph:
+Current preparation graph:
 
-- derives task `dueBy` from event time + task offset;
+- derives task `dueBy` from event time + offset;
 - validates an acyclic dependency graph;
 - blocks tasks whose dependencies are incomplete;
-- preserves completed unchanged tasks during replanning;
-- exposes the earliest ready task by `dueBy`.
+- preserves unchanged completed tasks during replanning;
+- exposes earliest ready task by `dueBy`.
 
-Full dependency-aware latest-start/slack/on-track/behind reasoning remains future Phase F work and must use an injected clock.
+Full latest-start/slack/on-track/behind reasoning is future Phase F work and must use an injected clock.
 
-## Late-change signature capability
+## Late-change invariant
 
-Current late-change architecture remains:
+Current late-change path remains:
 
 1. clone current state;
-2. apply proposed guest/constraint/menu change to proposal only;
+2. apply proposed change to proposal only;
 3. validate compatibility/servings;
 4. recalculate shopping;
-5. rebuild prep while preserving valid completed tasks;
-6. calculate changed shopping, added/removed tasks and preserved completed tasks;
-7. retain a pending impact;
+5. rebuild prep while preserving valid completed work;
+6. calculate impact;
+7. hold a pending impact;
 8. require explicit confirmation;
 9. reject stale revisions;
-10. apply atomically only after confirmation.
+10. apply atomically after confirmation.
 
-Phase C preserves this path.
+Phase C did not bypass this path.
 
 ## Recipe/dietary safety gap
 
-Current semantics are not sufficient for final broad dietary-safety claims.
+Current semantics are insufficient for final broad guest-specific dietary/allergen claims.
 
-Phase E must add stronger structured menu coverage semantics before richer guest-specific compatibility claims are made.
+Phase E must add stronger structured compatibility/coverage semantics before richer safety claims are exposed.
 
 ## Inventory semantic rule
 
 Authoritative `InventoryItem` requires quantity + unit.
 
-A vague statement such as “I have rice, oil and lemons” must not silently become exact quantities.
+Vague free text such as “I have rice, oil and lemons” must not silently become exact quantities.
 
-Phase C therefore deliberately supports explicit zero-inventory review but does not pretend to extract exact free-text pantry quantities.
-
-Phase D/E must design the richer fact/coverage route rather than improvising it.
+Phase C therefore supports a deterministic explicit zero-inventory answer but does not fabricate exact pantry quantities. Richer fact/coverage acquisition belongs in Phase D/E.
 
 ---
 
-# Phase B — read-only operating model
+# Phase B — verified operating projection
 
-Permanent verification report:
+Verification report:
 
 `reports/PHASE_B_VERIFICATION.md`
 
-Phase B final preservation head:
+Final Phase B preservation head:
 
 `14c93ebfc5e425db6ee970cf5a5b71d0fcd6c5da`
 
-Final Phase B run:
+Final run:
 
 `33617645927`
 
-Final Phase B source artifact:
+Evidence:
+
+- **87/87** backend/application tests;
+- **26/26** browser tests;
+- production build passed;
+- production audit: **0 vulnerabilities**.
+
+Phase B final source artifact:
 
 - name `host-competition-build-source`;
 - ID `9841617376`;
 - SHA-256 `3dcb7744d05163a123c2e0c0eca4a97f4da850f1829e6d71bd658d24bd7b8c8a`.
 
-Phase B evidence:
+## OperatingProjection
 
-- **87/87** backend/application tests;
-- **26/26** browser tests;
-- production build passed;
-- production audit reported **0 vulnerabilities**.
+`src/application/event-operating-state.ts` provides:
 
-## `src/application/event-operating-state.ts`
+- sanitized read-only event operating source;
+- selected-menu summary;
+- inventory coverage summary;
+- shopping summary;
+- preparation summary;
+- current/next action;
+- readiness summary;
+- latest receipt/safe reversible IDs;
+- deterministic attention;
+- explicit timing placeholder.
 
-Provides:
+It depends on validated persistence rather than direct domain mutation and does not expose raw HostState/undo snapshots/pending caches as a customer mutation API.
 
-- `EventOperatingSource`;
-- `OperatingProjection`;
-- `HostApplicationReadService`;
-- inventory/shopping/preparation/readiness summaries.
-
-The read service:
-
-- depends on persistence, not direct domain mutation;
-- loads validated committed state;
-- clones/sanitizes before returning values;
-- exposes only necessary operating data;
-- does not expose raw HostState, undo snapshots, all menus or live pending-impact caches;
-- performs no mutation.
-
-Timing remains explicitly:
+Timing remains:
 
 `health: "not_evaluated"`
 
-until the later timing phase.
+until the timing phase.
 
-## `src/application/lifecycle.ts`
+## Derived lifecycle
 
-Customer lifecycle is derived rather than persisted.
+READY requires all of:
 
-READY requires:
-
-- preparation graph exists;
-- active preparation tasks are complete;
-- shopping has been authoritatively evaluated;
+- active preparation graph exists;
+- active prep tasks are complete;
+- shopping was authoritatively evaluated;
 - no unresolved shopping remains.
 
-Prep completion alone cannot falsely declare READY while acquisition remains unresolved.
+Prep completion alone cannot falsely declare READY.
 
-## `src/application/attention.ts`
+## Attention priority
 
-Deterministically chooses exactly one primary attention item.
+Deterministic priority:
 
-Priority order:
-
-1. explicit confirmation;
-2. blocking/latest consequential failure;
+1. confirmation;
+2. consequential failure;
 3. pending change review;
 4. missing material input;
 5. menu decision;
 6. inventory review;
 7. shopping;
-8. preparation/run-sheet construction;
-9. current preparation task;
+8. run-sheet construction;
+9. current prep task;
 10. ready;
-99. no customer action.
+99. no action.
 
-`AttentionContext.inventoryConfirmed` exists because an empty inventory map cannot distinguish “customer confirmed nothing is on hand” from “inventory has not been reviewed.”
+An empty inventory map is not proof that inventory review happened.
 
 ---
 
-# Phase C — bounded goal-directed workflow orchestration
+# Phase C — verified goal-directed workflow orchestration
 
-Permanent verification report:
+Verification report:
 
 `reports/PHASE_C_VERIFICATION.md`
 
-Successful Phase C code-head run:
+## Goal
 
-- head `01f6a02ba58d033855445421dc390d8d275486b6`;
-- run `33672701928`;
-- job `100389922753`;
-- conclusion **success**.
+Phase C removes the requirement for customers to know internal commands such as “build shopping plan” and “build prep plan” during a normal workflow.
 
-The exact handover/report preservation head still requires a new full run before Phase C is finally closed.
+Controlled customer sequence is now:
 
-## Phase C purpose
+`event request -> menu choices -> explicit menu confirmation -> inventory review -> authoritative shopping -> preparation run sheet -> next action`
 
-The old orchestrator was too command/request driven: customers had to know to ask for internal stages such as shopping and prep.
-
-Phase C adds bounded goal-directed continuation without allowing the planner to become an authority.
-
-Normal controlled flow is now:
-
-`event request -> menu choices -> explicit menu confirmation -> inventory review -> shopping reconciliation -> preparation run sheet -> next action`
+The planner is not authoritative. It may only select specifically permitted low-risk work.
 
 ## Automatic-work boundary
 
-Only these tools may be automatically selected by the Phase C workflow runner:
+The restricted `AutomaticWorkflowTool` type allows only:
 
 1. `build_shopping_plan`
 2. `build_preparation_plan`
 
-They are encoded in the restricted `AutomaticWorkflowTool` type.
+The Phase C runner cannot automatically execute:
 
-The runner cannot automatically choose:
-
-- menu commitment;
-- cart preparation;
-- checkout;
-- late-change application;
-- undo;
-- lifecycle transition;
+- `commit_menu`;
+- `prepare_cart`;
+- `confirm_cart_action`;
+- `advance_event_status`;
+- `apply_confirmed_change`;
+- `undo_reversible_action`;
 - real payment/order actions.
 
-## `src/agent/workflow.ts`
+## Workflow plan and runner
 
-Provides:
+`src/agent/workflow.ts` provides:
 
 - `WorkflowGoal`;
 - `WorkflowStep`;
@@ -421,16 +410,16 @@ Provides:
 - `planLowRiskWorkflow()`;
 - `runLowRiskWorkflow()`.
 
-The plan is ephemeral, not HostState.
+The plan is ephemeral and not persisted as HostState.
 
 It records:
 
 - goal;
 - base revision;
-- candidate steps;
-- completed execution/replan trace;
+- candidate low-risk steps;
+- completed attempt/replan/result trace;
 - required input;
-- confirmation boundary;
+- explicit confirmation boundary;
 - stop reason.
 
 Each execution record includes:
@@ -438,179 +427,163 @@ Each execution record includes:
 - tool;
 - attempted revision;
 - reason;
-- success/failure/stale-replan status;
-- resulting revision where available;
-- error code where applicable;
-- returned low-risk result data where applicable.
+- status (`succeeded`, `failed`, `stale_replanned`);
+- resulting revision when available;
+- error code when applicable;
+- low-risk returned result data when applicable.
 
-### Bounds
+Default bounds:
 
-Default maximum successful automatic steps per run:
+- max successful automatic steps: `4`;
+- max stale replans: `2`.
 
-`4`
-
-Default maximum stale replans:
-
-`2`
-
-If the successful-step bound is reached, stop reason is explicitly:
+Reaching the successful-step bound stops as:
 
 `step_limit`
 
-It is not falsely reported as “no low-risk work remains.”
+It is not mislabeled as “no work remains.”
 
-### Stale revision control
+### Stale revision
 
 `STALE_REVISION` causes:
 
-1. stale attempt record;
-2. fresh OperatingProjection read;
-3. deterministic replan from current state;
-4. execution only if the new plan still selects an allowed low-risk tool;
-5. stop if the stale-replan bound is exceeded.
+1. stale attempt recorded;
+2. current OperatingProjection re-read;
+3. deterministic replan;
+4. only newly justified low-risk step may execute;
+5. stop if stale-replan limit is exceeded.
 
-No blind replay is permitted.
+No blind replay.
 
-### Failure control
+### Failure
 
-A non-stale tool failure stops the workflow immediately.
+A non-stale failure stops immediately. Later steps do not execute and are not represented as completed. Earlier successful low-risk state remains authoritative.
 
-No later step is executed or represented as complete.
+## GoalDirectedHostAgentOrchestrator
 
-Earlier successful low-risk state remains authoritative and may still be shown to the customer.
+`src/agent/goal-orchestrator.ts` wraps the proven `HostAgentOrchestrator` rather than replacing it.
 
-## `src/agent/goal-orchestrator.ts`
-
-`GoalDirectedHostAgentOrchestrator` wraps, rather than replaces, the proven `HostAgentOrchestrator`.
-
-The base orchestrator remains responsible for:
+The base orchestrator keeps responsibility for:
 
 - interpretation;
 - event creation;
-- menu proposals/selections;
-- confirmation handling;
+- menu proposals/selection;
+- confirmations;
 - late changes;
 - checkout confirmation;
 - task completion;
 - history/undo;
-- friendly errors.
+- customer-safe errors.
 
-The wrapper adds only controlled workflow continuation.
+The wrapper adds bounded continuation only.
 
 ### Event creation
 
-After a complete event request is successfully committed, Host automatically surfaces menu choices in the same customer turn.
+A complete event request now surfaces menu choices automatically in the same customer turn.
 
 No menu is committed automatically.
 
 ### Menu confirmation
 
-Customer selection enters the existing `commit_menu` confirmation path.
+Menu choice still enters the existing explicit `commit_menu` confirmation path.
 
-Before confirmation, authoritative selected menu remains unchanged.
+Before confirmation, authoritative selected menu does not change.
 
-After confirmation, the menu is committed and Host stops for inventory review.
+After confirmation, Host stops for inventory review.
 
 ### Inventory review
 
-Host asks:
+Host asks what required ingredients the customer already has.
 
-> What required ingredients do you already have? If you have none of them, say “I don't have any of them.”
+Vague pantry language is rejected rather than converted into invented quantities.
 
-Vague pantry language is not converted into authoritative quantities.
+Explicit zero-inventory language such as:
 
-Explicit zero-inventory language is accepted as the deterministic completion route for this phase.
+> I don't have any of them.
 
-After explicit review Host automatically runs the permitted shopping/prep sequence.
+is the deterministic completion route implemented in Phase C.
+
+After that explicit review Host automatically runs the allowed shopping→prep sequence, re-reading authoritative projection between mutations.
 
 ### Interruptions
 
-Late guest/dietary changes, status/history/help can interrupt the inventory-review turn through the controlled base orchestrator.
+Late guest/dietary changes may interrupt inventory review and continue through the existing impact-preview + explicit-confirmation path.
 
-A late change still uses:
-
-- read-only impact analysis;
-- visible impact;
-- explicit confirmation;
-- atomic confirmed update.
+They are not misrecorded as pantry data.
 
 ### Restart/resume invariant
 
-Partial recorded inventory is **not** proof the complete inventory review occurred.
+Partial recorded inventory is **not** proof the whole review is complete.
 
-Correct resume rule:
+Resume behavior:
 
-- some inventory + no shopping -> still ask for inventory review;
-- authoritative shopping exists -> reconciliation has advanced enough;
-- shopping exists + no prep -> resume may safely auto-build prep;
-- no stale pending confirmation is restored as committed truth.
+- some inventory + no shopping -> inventory review still required;
+- authoritative shopping exists -> reconciliation has advanced far enough;
+- shopping exists + no prep -> missing prep may be auto-built;
+- stale pending confirmation is not restored as committed truth.
 
-This invariant has dedicated restart tests.
+Dedicated restart tests protect this rule.
 
 ## Browser path
 
-`web/runtime.ts` constructs `GoalDirectedHostAgentOrchestrator` with:
+`web/runtime.ts` now constructs the goal-directed orchestrator with:
 
 - the same `HostToolRuntime`;
 - same persistence adapter;
 - `HostApplicationReadService` projection reader;
 - same deterministic demo providers.
 
-Voice and touch therefore exercise the same goal-directed application path.
+Touch and voice therefore exercise the same controlled Phase C route.
 
 ---
 
-# Phase C direct source-audit findings and fixes
+# Phase C audit findings fixed before closure
 
-Phase C was not accepted merely because the first implementation looked plausible.
+Phase C was not accepted merely because the first implementation compiled or looked plausible.
 
-## 1. Old test expected the wrong post-confirmation status
+## Obsolete menu-confirmation test
 
-An old test expected `ok` immediately after menu confirmation.
+Old expectation: `ok` immediately after menu confirmation.
 
-Phase C intentionally requires an inventory stop.
+Correct Phase C expectation:
 
-The test now verifies:
+- authoritative menu commits;
+- response becomes `needs_input`;
+- inventory review is required.
 
-- `needs_input`;
-- inventory question;
-- authoritative menu already committed.
+The test was corrected; product control was not weakened.
 
-## 2. Workflow plan contract was too thin
+## Thin workflow-plan contract
 
-Initial runner behavior was bounded, but the plan did not explicitly carry the complete trace/confirmation boundary required by the implementation map.
+Initial plan object did not explicitly expose all trace/confirmation data required by the implementation map.
 
-Fixed by adding:
+Added:
 
 - `candidateSteps`;
 - `completedSteps`;
 - `WorkflowConfirmationBoundary`;
 - `step_limit`;
-- explicit reason/revision/result trace.
+- reason/revision/result trace.
 
-## 3. Partial inventory was incorrectly treated as completed review after restart
+## Partial-inventory restart inference
 
-Initial resume logic used positive inventory-item count as proof review was complete.
+Initial resume logic incorrectly treated any positive inventory-item count as proof inventory review was complete.
 
-That violated the controlling inventory semantics.
+Fixed so partial inventory alone never advances the review. Existing authoritative shopping is the evidence that reconciliation already occurred.
 
-Fixed so only existing authoritative shopping proves reconciliation has already occurred. Dedicated restart tests prevent regression.
+## Optional event narrowing
 
-## 4. Optional OperatingProjection event assumption
+The richer plan exposed a compiler error because `OperatingProjection.event` is optional by type.
 
-The enriched plan exposed a TypeScript narrowing error because `OperatingProjection.event` is optional in the declared projection type.
-
-Fixed by narrowing once and passing the verified revision explicitly into the candidate-plan helper. No non-null assertion or guessed revision was used.
+Fixed by narrowing once and passing the verified revision explicitly. No guessed revision and no non-null shortcut was introduced.
 
 ---
 
-# Phase C code-head verification evidence
+# Phase C verification evidence
 
-Permanent report:
+## Successful product-code head
 
-`reports/PHASE_C_VERIFICATION.md`
-
-Successful code head:
+Head:
 
 `01f6a02ba58d033855445421dc390d8d275486b6`
 
@@ -622,76 +595,74 @@ Job:
 
 `100389922753`
 
-Environment:
+Passed:
 
-- Ubuntu 24.04;
-- Node 22.12.0;
-- npm 10.9.0.
+- **99/99** backend/application tests;
+- production dependency audit: **0 vulnerabilities**;
+- production web typecheck/build;
+- **26/26** Echo/mobile Playwright tests;
+- controlled source snapshot upload.
 
-## Application/backend
+## Successful report/handover preservation head
 
-`npm test`
+Head:
 
-- **99 tests**;
-- **99 passed**;
-- **0 failed**;
-- **0 skipped**.
+`5c3ff6478a3605798bad3e8808cdca7e9421b2ab`
 
-Phase C-specific successful tests cover:
+Run:
 
-- automatic menu surfacing;
-- inventory stop after confirmed menu;
-- vague pantry no-guess rule;
-- explicit zero-inventory shopping→prep chain;
-- shopping/prep no-bypass rule;
-- late-change interruption;
-- plan trace + explicit confirmation boundary;
-- stale-revision refresh/replan;
-- non-stale failure stop;
-- explicit bounded `step_limit`;
-- partial-inventory restart invariant;
-- shopping-proves-reconciliation resume continuation.
+`33673183155`
 
-## Production dependency audit
+Job:
 
-`npm audit --omit=dev`
+`100391477786`
 
-**0 vulnerabilities**
+Passed:
 
-## Production web build
+- `npm test`: **99 tests, 99 passed, 0 failed, 0 skipped**;
+- `npm audit --omit=dev`: **0 vulnerabilities**;
+- web TypeScript typecheck;
+- Vite 8.2.2 production build, 37 modules transformed;
+- Playwright: **26/26 passed** across Echo-like and mobile;
+- automated WCAG A/AA coverage remained passing;
+- controlled source snapshot assembly;
+- controlled source artifact upload.
 
-`npm run build:web`
+Phase C-specific tests 88–99 cover:
 
-- web TypeScript typecheck passed;
-- Vite 8.2.2 production build passed;
-- 37 modules transformed.
+88. automatic menu surfacing;
+89. inventory stop after confirmed menu;
+90. vague pantry no-guess rule;
+91. zero-inventory shopping→prep chain;
+92. no shopping/prep bypass around review;
+93. late-change interruption;
+94. completed trace + explicit confirmation boundary;
+95. stale refresh/replan;
+96. non-stale failure stop;
+97. bounded `step_limit`;
+98. partial-inventory restart invariant;
+99. shopping-proves-reconciliation resume continuation.
 
-## Browser
+Browser coverage includes:
 
-`npx playwright test`
-
-- **26/26 passed**;
-- Echo-like project;
-- mobile project.
-
-Coverage includes:
-
-- Phase C touch journey;
-- late vegan guest interruption/preview/confirmed update;
+- goal-directed touch journey;
+- late vegan guest interrupt/preview/confirm;
 - reload/resume;
 - touch targets/no overflow;
-- WCAG A/AA automated checks;
+- WCAG A/AA checks;
 - keyboard/dialog focus;
-- voice-only Phase C journey with one activation;
-- voice late change and receipts;
-- spoken no cancellation;
+- one-activation voice-only Phase C journey;
+- voice late change + receipts;
+- spoken `no` cancellation;
 - voice-unavailable touch fallback;
 - corrupt persistence handling;
 - memory fallback;
 - local-data deletion/privacy behavior;
 - no unexpected cross-origin deterministic application requests.
 
-## Code-head source artifact
+## Phase C preservation artifact
+
+From run `33673183155`:
 
 Artifact name:
 
@@ -699,33 +670,33 @@ Artifact name:
 
 Artifact ID:
 
-`9863157836`
+`9863338011`
 
-Size:
+Final size:
 
-`784598` bytes
+`789332` bytes
 
 Outer artifact SHA-256:
 
-`6cd94fc7e22415c6d253c59c66cafecc5d4463a5adf388af10c9f23d17e7cb57`
+`a66affe8ae536a0862f43651457276d0239ebb10d16871800e67eaa67b5ad984`
 
-Contents:
+Artifact contains:
 
-1. tracked-source ZIP from `git archive HEAD`;
-2. source ZIP SHA-256 file;
-3. source provenance file.
+1. `HOST_COMPETITION_BUILD_SOURCE.zip` created from `git archive HEAD`;
+2. `HOST_COMPETITION_BUILD_SOURCE.zip.sha256`;
+3. `SOURCE_PROVENANCE.txt` containing source branch, commit and creation time.
 
-This preserves the successful **code head**, not the later report/handover preservation head.
+The preservation artifact therefore contains the Phase C code, verification report and self-contained pre-closure handover state at `5c3ff647…`.
 
 ---
 
-# Competition-build verification workflow
+# Verification workflow
 
-Workflow:
+Workflow file:
 
 `.github/workflows/competition-build-verify.yml`
 
-For each current development-branch push it performs:
+Required stages:
 
 1. checkout `host-competition-build`;
 2. Node 22.12.0;
@@ -736,73 +707,43 @@ For each current development-branch push it performs:
 7. `npm run build:web`;
 8. `npx playwright test`;
 9. tracked-source ZIP assembly;
-10. source SHA-256/provenance assembly;
+10. SHA-256 + source provenance;
 11. controlled artifact upload.
 
-Concurrency cancellation prevents obsolete superseded branch runs from becoming the controlling result.
+Concurrency cancellation is enabled so obsolete superseded pushes do not become the controlling verification result.
 
-Do not treat an earlier green run as proof of a later head. Always match workflow `head_sha` to the exact branch head being claimed.
+Permanent rule:
 
----
-
-# Current external Alexa+/MCP constraints retained
-
-The competition build still does not claim production Alexa MCP deployment.
-
-Current later-stage constraints retained from research/specification include:
-
-- simulated Alexa+ route remains valid for the competition path;
-- working Agent Skill quality is the priority;
-- self-hosted MCP requires a remotely reachable service;
-- OAuth/PKCE/protected-resource authorization requirements must be followed when real Alexa MCP onboarding begins;
-- latency/reliability must be measured against the actual remote path;
-- AWS/Bedrock/AgentCore claims must not be made until real integration is implemented and verified.
-
-Do not fabricate a live URL, AWS implementation, hardware certification or public video.
+> Never treat an earlier green run as proof of a later branch head. Match the claimed commit to its own successful workflow run.
 
 ---
 
-# Remaining product roadmap after Phase C
+# External Alexa+/MCP/AWS state
 
-The controlling implementation map defines later stages. Do not skip ahead or collapse them.
+Do not claim production Alexa/MCP deployment yet.
 
-## Phase D — conversational fact acquisition
+Retained later-stage requirements include:
 
-Next authorised development stage **only after final Phase C preservation passes**.
+- simulated Alexa+ competition route remains valid;
+- working Agent Skill quality remains the priority;
+- real self-hosted MCP requires a remotely reachable endpoint;
+- real Alexa MCP onboarding requires the applicable OAuth/PKCE/protected-resource flow;
+- latency/reliability must be measured on the actual remote path;
+- AWS/Bedrock/AgentCore claims require real implemented and verified calls.
 
-Purpose:
+Do not fabricate:
 
-- richer event facts and corrections;
-- conversational references;
-- multi-intent handling;
-- ambiguity control;
-- inventory candidate extraction without inventing quantities;
-- preserve deterministic authoritative boundary.
-
-## Phase E — richer menu/recipe/guest compatibility semantics
-
-Must fix the current dietary/allergen coverage limitations before stronger safety claims.
-
-## Phase F — timing intelligence
-
-Must add injected-clock, dependency-aware latest-start/slack/on-track/behind reasoning. Do not use raw wall-clock logic scattered through UI/model code.
-
-## Later phases
-
-Still include, as specified in the implementation map:
-
-- richer Event Home / Run Sheet / Ready views;
-- multi-event/multi-user scope if justified by the map;
-- external Alexa/MCP/AWS integration where actually needed;
-- full competition visual rebuild and direct visual audit;
-- final demo capture/video;
-- submission packaging and Devpost completion.
+- live URL;
+- AWS implementation;
+- hardware certification;
+- payment/order capability;
+- public competition video.
 
 ---
 
-# What is still explicitly NOT implemented/claimed
+# Explicitly not complete
 
-Do not claim any of these as complete:
+Do **not** claim any of these are implemented/final:
 
 - production AWS/Bedrock integration;
 - AgentCore integration;
@@ -812,41 +753,56 @@ Do not claim any of these as complete:
 - final recipe-safety semantics;
 - exact free-text pantry quantity extraction;
 - full dependency-aware timing/slack health;
-- final competition UI redesign;
+- final competition visual rebuild;
 - final public narrated demo;
 - final Devpost submission.
 
 ---
 
-# Exact continuation procedure
+# Next phase — Phase D
 
-Before the next product phase:
+Next authorised development phase after exact-head re-verification is:
 
-1. Fetch current `host-competition-build` head.
-2. Verify the newest `Competition build verification` run has `head_sha` equal to that exact head.
-3. Require all of:
-   - application/backend tests passing;
-   - production dependency audit passing with no vulnerabilities;
-   - production web build passing;
-   - full Echo/mobile Playwright suite passing;
-   - controlled source artifact uploaded.
-4. Fetch final artifact metadata and preserve/download the final Phase C safe source package.
-5. Re-fetch `main` and confirm it remains unchanged at the protected baseline unless the user explicitly authorised promotion.
-6. Only then call Phase C closed.
-7. On the next user `continue`, begin **Phase D** by reading the controlling Phase D sections of the product specification/implementation map and auditing the existing interpreter/orchestrator/fact surfaces before editing code.
+**Phase D — conversational fact acquisition**
 
-Do not merge to `main` as part of Phase C closure.
+The goal is to improve how Host gathers, corrects and resolves facts without allowing model output to become authoritative state.
+
+Phase D should address, in the order defined by the controlling implementation map:
+
+- richer event facts;
+- corrections;
+- conversational references;
+- multi-intent input;
+- ambiguity control;
+- inventory candidate extraction without invented quantities;
+- deterministic confirmation/validation before authoritative mutation.
+
+Before editing Phase D code:
+
+1. fetch current development head;
+2. verify newest matching-head competition-build run is successful;
+3. re-read the Phase D sections of both controlling design documents;
+4. audit current interpreter/model/orchestrator/fact schemas and tests;
+5. define the exact fact-acquisition contract before implementation;
+6. retain all existing confirmation/revision/persistence controls;
+7. add focused tests before claiming any new conversational behavior;
+8. run the full competition-build gate again after substantive changes;
+9. update verification report/handover and preserve a new controlled source artifact.
+
+Do not start Phase E/F/UI/AWS/submission work as a shortcut around Phase D.
 
 ---
 
-# Phase C closure condition
+# Handover safety check for every future continuation
 
-Phase C is finally closed only when the exact current preservation head containing:
+Before relying on this file:
 
-- the Phase C code;
-- `reports/PHASE_C_VERIFICATION.md`;
-- this self-contained handover;
+- fetch `host-competition-build` head;
+- fetch the latest competition-build workflow run;
+- require `head_sha` to match the current branch head;
+- require successful backend/application tests, dependency audit, production build, browser gate and source artifact upload;
+- fetch `main` and confirm no unauthorised promotion occurred.
 
-passes the full competition-build gate and produces its own controlled source artifact.
+If any of those checks fail or point at a different head, do not assume the current branch is verified. Re-establish the last matching verified state first.
 
-Until that exact run succeeds, describe Phase C as **code-complete and code-head verified, preservation verification pending**.
+Phase C itself is **closed and verified**; the next substantive product work is Phase D.
