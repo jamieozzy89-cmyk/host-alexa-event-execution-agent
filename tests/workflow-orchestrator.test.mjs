@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { runLowRiskWorkflow } from "../dist/src/agent/workflow.js";
+import { planLowRiskWorkflow, runLowRiskWorkflow } from "../dist/src/agent/workflow.js";
 import { createEvent, makeAgent } from "./agent-fixtures.mjs";
 
 async function commitFirstSurfacedMenu(agent, conversation = "workflow") {
@@ -134,11 +134,45 @@ function fakeProjection(revision, options = {}) {
       ? { totalTasks: 1, readyTasks: 1, blockedTasks: 0, inProgressTasks: 0, doneTasks: 0, cancelledTasks: 0 }
       : { totalTasks: 0, readyTasks: 0, blockedTasks: 0, inProgressTasks: 0, doneTasks: 0, cancelledTasks: 0 },
     timing: { health: "not_evaluated", detail: "fake" },
-    attention: { kind: options.prepBuilt ? "task" : "shopping", priority: options.prepBuilt ? 9 : 7, title: "fake", detail: "fake", customerActionRequired: false },
+    attention: options.attention ?? { kind: options.prepBuilt ? "task" : "shopping", priority: options.prepBuilt ? 9 : 7, title: "fake", detail: "fake", customerActionRequired: false },
     readiness: { isReady: false, shoppingEvaluated: options.shoppingBuilt ?? false, shoppingResolved: false, preparationExists: options.prepBuilt ?? false, preparationComplete: false },
     reversibleReceiptIds: [],
   };
 }
+
+test("workflow plan exposes completed trace and an explicit confirmation boundary without an executable step", () => {
+  const completed = [{
+    tool: "build_shopping_plan",
+    attemptedRevision: 1,
+    resultingRevision: 2,
+    reason: "controlled prior low-risk step",
+    status: "succeeded",
+    data: { shopping: [] },
+  }];
+  const projection = fakeProjection(2, {
+    shoppingBuilt: true,
+    attention: {
+      kind: "confirmation",
+      priority: 1,
+      title: "Confirm the material action",
+      detail: "Customer confirmation is required before this action can run.",
+      customerActionRequired: true,
+      relatedId: "confirm-1",
+    },
+  });
+
+  const plan = planLowRiskWorkflow(projection, { inventoryReviewConfirmed: true }, completed);
+  assert.equal(plan.stopReason, "confirmation_required");
+  assert.deepEqual(plan.candidateSteps, []);
+  assert.equal(plan.completedSteps.length, 1);
+  assert.equal(plan.completedSteps[0].tool, "build_shopping_plan");
+  assert.deepEqual(plan.confirmationBoundary, {
+    kind: "explicit_customer_confirmation",
+    title: "Confirm the material action",
+    detail: "Customer confirmation is required before this action can run.",
+    relatedId: "confirm-1",
+  });
+});
 
 test("stale low-risk revision is refreshed and replanned instead of blindly replayed", async () => {
   let read = 0;
@@ -184,8 +218,11 @@ test("stale low-risk revision is refreshed and replanned instead of blindly repl
     ["build_preparation_plan", 3],
   ]);
   assert.deepEqual(run.records.map((record) => record.status), ["stale_replanned", "succeeded", "succeeded"]);
+  assert.ok(run.records.every((record) => record.reason.length > 0));
   assert.equal(run.finalRevision, 4);
   assert.equal(run.stopReason, "no_low_risk_work");
+  assert.equal(run.finalPlan.completedSteps.length, 3);
+  assert.deepEqual(run.finalPlan.candidateSteps, []);
 });
 
 test("non-stale low-risk failure stops the workflow before later steps", async () => {
@@ -209,4 +246,41 @@ test("non-stale low-risk failure stops the workflow before later steps", async (
   assert.equal(run.stopReason, "failure");
   assert.equal(run.records.length, 1);
   assert.equal(run.records[0].status, "failed");
+  assert.equal(run.finalPlan.completedSteps.length, 1);
+});
+
+test("bounded workflow reports step_limit rather than falsely claiming there is no remaining low-risk work", async () => {
+  let read = 0;
+  const projections = [
+    fakeProjection(7),
+    fakeProjection(8, { shoppingBuilt: true }),
+    fakeProjection(8, { shoppingBuilt: true }),
+  ];
+  const projectionReader = {
+    async readProjection() {
+      const value = projections[Math.min(read, projections.length - 1)];
+      read += 1;
+      return structuredClone(value);
+    },
+  };
+  const calls = [];
+  const tools = {
+    async execute(call) {
+      calls.push(call.name);
+      return { ok: true, tool: call.name, status: "succeeded", stateChanged: true, eventId: "fake-event", revision: 8, data: { shopping: [] } };
+    },
+  };
+
+  const run = await runLowRiskWorkflow({
+    eventId: "fake-event",
+    tools,
+    projectionReader,
+    policy: { inventoryReviewConfirmed: true },
+    options: { maxSuccessfulSteps: 1 },
+  });
+
+  assert.deepEqual(calls, ["build_shopping_plan"]);
+  assert.equal(run.stopReason, "step_limit");
+  assert.equal(run.finalPlan.stopReason, "step_limit");
+  assert.equal(run.finalPlan.completedSteps.length, 1);
 });
