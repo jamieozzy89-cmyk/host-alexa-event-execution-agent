@@ -1,4 +1,5 @@
 import type { Constraint, Menu, ShoppingItem, PreparationTask, ActionReceipt, AuditEvent } from "../domain/types.js";
+import type { AttentionContext, OperatingProjection } from "../application/event-operating-state.js";
 
 export type HostIntentKind =
   | "create_event" | "status" | "next_action" | "menu_options" | "choose_menu" | "shopping" | "products"
@@ -36,6 +37,10 @@ export interface IntentInterpreter {
 
 export interface StructuredIntentModel {
   infer(input: { text: string; context: IntentContext }): Promise<unknown>;
+}
+
+export interface OperatingProjectionReader {
+  readProjection(eventId: string, context?: AttentionContext): Promise<OperatingProjection | null>;
 }
 
 export interface EventSummaryCard {
@@ -148,6 +153,7 @@ export interface HostAgentDependencies {
   idFactory?: () => string;
   defaultTimezone?: string;
   defaultCurrency?: string;
+  operatingProjectionReader?: OperatingProjectionReader;
 }
 
 export interface EventDraft {
@@ -173,6 +179,8 @@ export interface ConversationState {
   eventId?: string | undefined;
   draft?: EventDraft | undefined;
   awaitingField?: "guestCount" | "startAt" | "budget" | undefined;
+  awaitingWorkflowInput?: "inventory_review" | undefined;
+  inventoryReviewConfirmed?: boolean | undefined;
   pending?: PendingConfirmation | undefined;
   lastMenus?: Menu[];
   lastShopping?: ShoppingItem[];
