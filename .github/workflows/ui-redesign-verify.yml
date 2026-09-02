@@ -72,6 +72,18 @@ jobs:
               raise SystemExit('obsolete shopping wording assertion was not unique')
           text = text.replace(old, new, 1)
           spec.write_text(text)
+
+          capture = Path('submission/capture-stage10.mjs')
+          text = capture.read_text()
+          replacements = {
+              '  await page.getByText("Authoritative quantities").waitFor();\n': '  await page.getByRole("article", { name: "Authoritative shopping list" }).waitFor();\n',
+              '  await page.getByText("Dependency-aware plan").waitFor();\n': '  await page.getByRole("article", { name: "Preparation plan" }).waitFor();\n',
+          }
+          for old, new in replacements.items():
+              if text.count(old) != 1:
+                  raise SystemExit(f'capture selector replacement was not unique: {old}')
+              text = text.replace(old, new, 1)
+          capture.write_text(text)
           PY
 
           grep -F 'Tonight at a glance' web/render.ts
@@ -80,11 +92,11 @@ jobs:
           grep -F '"Preparation plan"' web/render.ts
           ! grep -F 'HTMKElement' web/render.ts
           ! grep -F 'Current plan' tests/web/host-ui.spec.ts
-          ! grep -F 'Authoritative quantities' tests/web/host-ui.spec.ts
-          ! grep -F 'Dependency-aware plan' tests/web/host-ui.spec.ts
+          ! grep -F 'Authoritative quantities' tests/web/host-ui.spec.ts submission/capture-stage10.mjs
+          ! grep -F 'Dependency-aware plan' tests/web/host-ui.spec.ts submission/capture-stage10.mjs
           grep -F 'Authoritative event summary' tests/web/host-ui.spec.ts
-          grep -F 'Authoritative shopping list' tests/web/host-ui.spec.ts
-          grep -F 'Preparation plan' tests/web/host-ui.spec.ts
+          grep -F 'Authoritative shopping list' tests/web/host-ui.spec.ts submission/capture-stage10.mjs
+          grep -F 'Preparation plan' tests/web/host-ui.spec.ts submission/capture-stage10.mjs
           grep -F -- '--ink-muted: #696c63;' web/styles.css
           grep -F -- '--tomato: #a84433;' web/styles.css
       - name: Install dependencies and Chromium
@@ -129,7 +141,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add web/render.ts web/styles.css tests/web/host-ui.spec.ts
+          git add web/render.ts web/styles.css tests/web/host-ui.spec.ts submission/capture-stage10.mjs
           git commit -m "Verify editorial Host UI redesign corrections"
           git pull --rebase origin ui-redesign-editorial
           git push origin HEAD:ui-redesign-editorial
