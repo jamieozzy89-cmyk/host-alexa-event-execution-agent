@@ -1,9 +1,10 @@
 # Host: Alexa+ Event Execution Agent
 
 **Competition:** Build, Ship, Shape: Amazon Developer Hackathon 2026  
-**Primary track:** Alexa+ — simulated Alexa+ web experience  
-**Current verified stage:** Stage 09 — hardened voice + touch product; hosted deployment still pending
-**Competition deadline:** 23 October 2026, 20:00 GMT+1 (entrant-supplied competition page)
+**Primary track:** Alexa+  
+**Current accepted product baseline:** promoted second editorial refinement on `main`  
+**Verified product-code commit:** `e80fc18517111e55f3813c4e4eddf1c7428769a2`  
+**Competition deadline:** 23 October 2026, 12:00 PM PDT / 20:00 BST
 
 ## What Host is
 
@@ -15,28 +16,31 @@ Core promise:
 
 A defining rule is that conversation, voice output, and presentation never make an action true. The agent interprets the request and selects controlled tools; only validated application/tool state can establish completion, persist the result, and create receipts/audit evidence.
 
-## Current verified product
+## Current accepted product
 
-Host now combines:
+The current promoted product combines:
 
 - authoritative domain/state engine;
 - persistence and restart/reload recovery;
 - 17 validated execution tools;
 - controlled agent/orchestrator;
-- touch-first simulated Alexa+ web interface;
+- simulated Alexa+ web interface;
 - browser voice recognition and speech output when supported;
 - explicit voice-unavailable fallback to touch/keyboard;
-- customer-safe receipt/history evidence.
+- customer-safe receipt/history evidence;
+- the verified second editorial UI refinement now promoted to `main`.
 
-The browser experience provides three customer views:
+The current browser experience provides three customer views:
 
 - **Plan** — natural conversation plus structured current results;
 - **Live** — one ready preparation task at a time with large hands-busy controls and visible authoritative next-step guidance;
 - **Activity** — customer-safe receipts showing what actually succeeded, failed or was reversed.
 
+This is the accepted engineering baseline, not the final competition end-state. The next controlled product generation is defined separately in the current handover and product specification once that development branch is created.
+
 ## Voice interaction
 
-Stage 07 adds a browser voice adapter around the existing `HostAgentOrchestrator`. It does not create a second agent or state engine.
+The browser voice adapter wraps the existing `HostAgentOrchestrator`. It does not create a second agent or state engine.
 
 When the browser provides the required Web Speech capabilities, a user can activate Voice once and continue through conversational turns using speech recognition and speech synthesis. Recognised text is routed through the same `handleText()` path as typed conversation, and Host speaks the same authoritative `AgentReply.speech` returned by the application.
 
@@ -86,34 +90,34 @@ Implemented and verified capabilities include:
 
 ## Verification status
 
+The promoted second editorial refinement was reverified before promotion.
+
 ### Backend/application regression
 
-Stage 02–09 backend/application suite: **74 tests passed, 0 failed.**
+**74 tests passed, 0 failed.**
+
+### Production web build
+
+TypeScript web typecheck and production Vite build passed.
 
 ### Browser acceptance
 
-Stage 06–09 browser suite: **26 tests passed, 0 failed.**
+**26 tests passed, 0 failed.**
 
 Configured Playwright projects:
 
 - `echo-show`: 1280 × 800, touch enabled;
 - `mobile`: 390 × 844, touch/mobile enabled.
 
-The 26 cases retain the Stage 06 touch and Stage 07 voice journeys and add Stage 09 accessibility, focus, recovery, privacy/storage and network-boundary checks across the Echo Show-like and mobile projects.
+The browser suite retains the touch and voice journeys plus accessibility, focus, recovery, privacy/storage and network-boundary checks. Existing Axe WCAG A/AA checks are included in that browser gate.
 
-Voice scenarios verify:
-
-1. complete voice-only core execution journey after one activation, including receipts;
-2. spoken cancellation of a pending material action and correct recovery guidance;
-3. explicit voice-unavailable fallback with touch path retained.
-
-Stage 07 voice release evidence remains in `reports/STAGE07_VERIFICATION.md`. Stage 09 hardening evidence is recorded in `reports/STAGE09_VERIFICATION.md` and `docs/HARDENING_STAGE09.md`.
+The refinement verification run was GitHub Actions run `33581353724`, job `100096132537`. The verified redesigned gallery screenshot commit is `46b537fc3b79fcae20ff59bb49d5d52ccf331ff9`.
 
 ### Automated voice-test boundary
 
 Browser voice acceptance uses deterministic fake Web Speech recognition/synthesis objects injected into Chromium. This directly tests Host's browser voice-controller lifecycle, orchestration routing, confirmation behavior, spoken output, state effects and fallback behavior without depending on physical microphone acoustics or a remote speech service.
 
-Physical microphone/acoustic behavior across every real browser/device remains outside deterministic automation; the Stage 09 product therefore retains explicit voice-unavailable/error fallbacks rather than claiming universal browser voice compatibility.
+Physical microphone/acoustic behavior across every real browser/device remains outside deterministic automation. Host therefore retains explicit voice-unavailable/error fallbacks rather than claiming universal browser voice compatibility.
 
 ## User experience contract
 
@@ -142,9 +146,9 @@ Interaction rules enforced by the application/tests include:
 - preserve equivalent controlled routes across voice and touch where the current journey exposes them;
 - explicitly retain touch/keyboard fallback if browser voice fails or is unavailable.
 
-## Stage 09 hardening
+## Retained hardening
 
-The current product has been hardened without creating a second execution path. Verified additions include:
+The current product retains the accepted hardening controls without creating a second execution path:
 
 - keyboard focus continuity after async rerenders;
 - labelled modal dialog with initial and return focus;
@@ -158,26 +162,28 @@ The current product has been hardened without creating a second execution path. 
 - no-referrer document policy;
 - automated Axe WCAG A/AA checks on representative surfaces;
 - automated rejection of unsafe HTML-injection primitives and direct web/domain access;
-- zero production dependency vulnerabilities at the verified gate;
+- zero production dependency vulnerabilities at the verified refinement install/audit output;
 - provider-independent relative static asset paths;
 - aligned package/lock version `0.9.0` and Node.js floor `>=22.12.0`.
 
-The full Stage 09 browser suite passes **26/26** and the backend/application suite remains **74/74**.
+Historical Stage 07 and Stage 09 verification records remain under `reports/` and `docs/`. They are retained evidence, not claims that Stage 09 is still the current release.
 
-Hosted deployment is not yet claimed. The Vercel chat deployment wrapper cannot currently accept the required target/name/file arguments through its exposed schema, and GitHub Pages is disabled and cannot be enabled with the repository workflow's normal `GITHUB_TOKEN`. The build is deployment-ready, but a public URL must not be listed until a supported deployment path is available and smoke-tested.
+## Competition route and current external-integration boundary
 
-## Competition mini-challenge status
+- **Alexa+ primary track:** active.
+- **Current eligible implementation route:** simulated Alexa+ web experience.
+- **Open Source mini challenge:** selected.
+- **AWS Builder:** not currently claimed.
+- **Hosted deployment:** not currently claimed.
+- **Working Agent Skill / self-hosted MCP server:** not currently claimed.
 
-- **Open Source:** selected for entry. Host is a new public MIT repository with substantive implementation and tests. Submission evidence is prepared in `submission/OPEN_SOURCE_MINI_EVIDENCE.md`.
-- **AWS Builder:** not currently claimed. The user has an AWS account, but has chosen to defer connecting it for now. Bedrock + AgentCore Memory remains the selected future AWS architecture; no AWS runtime integration has yet been implemented or verified.
-
-See `docs/COMPETITION_INTEGRATION_STAGE08.md` for the controlled decision and AWS integration boundary.
+The current official Alexa+ hackathon rules allow a simulated Alexa+ experience using the entrant's own AI or agentic tools. They also prioritize a working Agent Skill and accept a self-hosted MCP server implementing MCP specification version 2025-11-25 or later over Streamable HTTP. The next competition-grade product generation is intended to evaluate and, where verified feasible, add a standards-compliant MCP path without bypassing Host's authoritative tool/domain controls.
 
 ## Runtime/model boundary
 
-The verified default runtime uses `HeuristicIntentInterpreter` behind `HostAgentOrchestrator`. This gives a reproducible local path and keeps the product usable without a live external model.
+The verified default runtime currently uses `HeuristicIntentInterpreter` behind `HostAgentOrchestrator`. This gives a reproducible local path and keeps the product usable without a live external model.
 
-`ModelBackedIntentInterpreter`, `ResilientIntentInterpreter`, and `JsonModelProxyAdapter` provide a controlled future integration point for a live model provider. **No live external LLM provider, API key, Amazon Bedrock integration, or AWS service is currently claimed.** A model never receives a direct state-mutation route; interpreted intent still terminates at the validated tool layer.
+`ModelBackedIntentInterpreter`, `ResilientIntentInterpreter`, and `JsonModelProxyAdapter` provide a controlled integration point for a live model provider. **No live external LLM provider, API key, Amazon Bedrock integration, or AWS service is currently claimed.** A model never receives a direct state-mutation route; interpreted intent still terminates at the validated tool layer.
 
 ## Browser simulation boundary
 
@@ -185,7 +191,7 @@ The browser runtime uses supported application exports only. It does not import 
 
 Persistence uses `JsonStoragePersistenceAdapter` over browser `localStorage`. The active event id is remembered separately, then restored through the orchestrator on reload.
 
-The product explicitly identifies itself as an **Alexa+ simulation**.
+The product explicitly identifies itself as an **Alexa+ simulation** where that disclosure is required.
 
 Menu proposals, product candidates, and checkout remain deterministic simulations. They are not represented as Amazon retail, grocery-provider, payment, AWS, or physical Alexa-device calls.
 
@@ -224,11 +230,13 @@ npx playwright install --with-deps chromium
 npm run test:web
 ```
 
-Run the complete Stage 09 gate after browser dependencies are installed:
+Run the retained complete application/browser gate after browser dependencies are installed:
 
 ```bash
 npm run verify:stage09
 ```
+
+The script name is retained for compatibility with the historical hardening stage; it is not a statement that Stage 09 remains the current accepted product.
 
 ## Application-facing API
 
@@ -262,17 +270,16 @@ All authoritative mutations continue through the existing 17 tools:
 - `src/simulated-services/` — clearly labelled deterministic demo adapters;
 - `web/` — simulated Alexa+ web experience and browser voice adapter;
 - `tests/` — backend/application and browser touch/voice verification;
-- `docs/` — permanent architecture records;
+- `docs/` — permanent architecture, product and control records;
 - `reports/` — permanent verification records;
+- `submission/` — competition evidence and submission material;
 - `HANDOVER.md` — self-contained current continuation state;
 - `LICENSE` — MIT licence.
 
 ## Current boundary
 
-Host now has the authoritative execution engine, persistence, validated tools, controlled agent/orchestrator, polished simulated Alexa+ touch UI, browser voice path, and the verified Stage 09 accessibility/privacy/recovery/security hardening layer.
+The current accepted `main` product is a verified, stateful simulated Alexa+ execution-agent foundation with authoritative state, persistence, 17 validated tools, controlled orchestration, browser voice, touch UI, accessibility/privacy/recovery/security controls and the promoted editorial redesign.
 
-The remaining Stage 09 item is **hosted deployment and smoke testing**. The current code/build is ready for deployment, but no hosted URL is claimed while the connected deployment interfaces cannot accept the exact verified artifact or enable repository Pages.
+It is **not** the final competition-grade product. In particular, a live model-backed reasoning path, standards-compliant MCP server/Agent Skill path, deeper temporal orchestration, richer end-state UI, external service integration, hosted deployment, final public video and final Devpost submission are not yet claimed.
 
-AWS Builder remains deliberately deferred. Open Source remains selected.
-
-After a real hosted deployment is verified—or if the submission is explicitly completed using the repository/demo access route allowed by the rules—the next controlled stage is **Stage 10 — submission artifacts**.
+`HANDOVER.md` is the controlling continuation source for the current development stage.
