@@ -24,16 +24,17 @@ export function deriveCustomerStage(source: EventOperatingSource | null): Custom
   if (source.event.status === "complete") return "complete";
 
   const activeTasks = source.tasks.filter((task) => task.status !== "cancelled");
-  if (activeTasks.length > 0 && activeTasks.every((task) => task.status === "done")) return "ready";
+  const unresolvedShopping = source.shopping.filter(
+    (item) => item.toBuyQuantity > 0 && item.status !== "simulated_purchased",
+  );
+  const shoppingResolved = source.shopping.length > 0 && unresolvedShopping.length === 0;
+  const preparationComplete = activeTasks.length > 0 && activeTasks.every((task) => task.status === "done");
 
+  if (preparationComplete && shoppingResolved) return "ready";
   if (source.event.status === "live") return "live";
   if (!source.selectedMenu) return "plan";
 
   if (activeTasks.length > 0 || source.event.status === "preparing") return "prep";
-
-  const unresolvedShopping = source.shopping.filter(
-    (item) => item.toBuyQuantity > 0 && item.status !== "simulated_purchased",
-  );
   if (source.shopping.length === 0 || unresolvedShopping.length > 0 || source.event.status === "sourcing") return "shop";
 
   return "prep";
