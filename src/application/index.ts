@@ -93,3 +93,29 @@ export type {
   OperatingProjectionReader,
   StructuredIntentModel,
 } from "../agent/types.js";
+export {
+  CUSTOMER_UNDERSTANDING_JSON_SCHEMA,
+  LegacyIntentUnderstandingInterpreter,
+  ModelCustomerUnderstandingInterpreter,
+  ResilientUnderstandingInterpreter,
+  parseCustomerUnderstanding,
+} from "../model/index.js";
+export type {
+  CandidateConstraintType,
+  CandidateEventFacts,
+  CustomerIntentCandidate,
+  CustomerIntentKind,
+  CustomerUnderstanding,
+  CustomerUnderstandingInterpreter,
+  InventoryCandidate,
+  InventoryEvidenceKind,
+  InventoryReviewMode,
+  InventoryUnderstanding,
+  PreferenceCandidate,
+  ReferenceCandidate,
+  ReferenceKind,
+  StructuredUnderstandingModel,
+  UnderstandingAmbiguity,
+  UnderstandingContext,
+  UnderstandingInput,
+} from "../model/index.js";
