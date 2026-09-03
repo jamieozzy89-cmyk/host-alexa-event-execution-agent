@@ -75,18 +75,18 @@ Conversation is an input/explanation surface, not the final information architec
 
 Completed controlled stages:
 
-- **Phase A — product specification, repository cleanup, architecture audit and implementation map:** complete.
+- **Phase A — product specification, source-control cleanup, architecture audit and implementation map:** complete.
 - **Phase B — read-only OperatingProjection, derived lifecycle and deterministic Attention Engine:** complete and verified.
 - **Phase C — bounded goal-directed workflow orchestration:** closed and verified.
-- **Phase D1 — structured non-authoritative conversational-understanding boundary:** code-complete and code-head verified; report/handover preservation verification is the current close gate.
+- **Phase D1 — structured non-authoritative conversational-understanding boundary:** **closed and verified**.
 
 Whole Phase D is **not complete**.
 
-Next authorised substantive substage after D1 preservation closes:
+Next authorised substantive substage:
 
 **Phase D2 — controlled orchestrator integration and inventory-coverage capability.**
 
-Do not begin D2 until the exact head containing `reports/PHASE_D1_VERIFICATION.md` and this handover passes the complete competition-build gate and produces a separately verified source artifact.
+D1 preservation is complete. Before changing D2 product code, the then-current closure-record head must still have its own successful exact-head competition-build run under the permanent rule below.
 
 ---
 
@@ -116,8 +116,11 @@ Important verified historical heads:
 - Phase C final verified head before Phase D: `f007ef48e3f53bd2f26846692a2d511bd9fe2dd2`
 - Phase D1 verified product-code head: `e5e0bd428af04c391907cc77ebe4b2db724495f8`
 - Phase D1 verification-report commit: `c52997fd68397a5d87213480871ab39498b21372`
+- Phase D1 report/handover preservation head: `49dc849d516f042fd5e42089934d17cfced9ced7`
+- Phase D1 preservation run: `33814183151`
+- Phase D1 preservation artifact: `9916037746`
 
-This handover commit is later than the successful D1 code-head run, so the current report/handover preservation head requires its own full verification before D1 is called closed.
+The preservation head passed the full gate and its downloaded artifact was independently checksum/provenance verified. D1 is therefore closed. This closure-record update is documentation-only; the permanent exact-head rule still requires this new closure head to pass before D2 code changes begin.
 
 ## Redundant temporary branch created during D1
 
@@ -651,6 +654,33 @@ returned:
 
 `HOST_COMPETITION_BUILD_SOURCE.zip: OK`
 
+## D1 report/handover preservation evidence
+
+Preservation head:
+
+`49dc849d516f042fd5e42089934d17cfced9ced7`
+
+Run:
+
+`33814183151`
+
+Conclusion:
+
+**success**
+
+The full gate remained passing on the report/handover preservation head.
+
+Preservation artifact:
+
+- ID `9916037746`;
+- size `808759` bytes;
+- outer SHA-256 `c45383a64cca2ba6bce14d13d6446dd61c25c4859564b30e8d1f8130f264039c`;
+- provenance source commit `49dc849d516f042fd5e42089934d17cfced9ced7`;
+- inner source ZIP SHA-256 `4bf468d08f800578cb15333a87190e3a5e3c96cbeb3581880e21e5a35e3f93c7`;
+- downloaded independent checksum result `HOST_COMPETITION_BUILD_SOURCE.zip: OK`.
+
+This preservation evidence closes D1.
+
 ## D1 is not the whole Phase D
 
 Still required in later Phase D work:
@@ -749,29 +779,21 @@ Do **not** claim any of the following are complete:
 
 # Exact current continuation point
 
-D1 code head is verified, but this report/handover preservation head still must pass its own complete workflow and controlled-artifact verification.
+D1 is **closed and verified** on its report/handover preservation head `49dc849d516f042fd5e42089934d17cfced9ced7`.
 
-Before D2:
+This closure-record edit is documentation-only. Before D2 product code changes:
 
 1. fetch current `host-competition-build` head;
-2. require newest competition-build run `head_sha` to match it exactly;
-3. require 118/118 backend/application tests;
-4. require production audit 0 vulnerabilities;
-5. require production web build success;
-6. require 26/26 browser tests;
-7. require source snapshot upload;
-8. download that exact artifact and independently verify outer digest, provenance and inner source checksum;
-9. re-fetch `main` and require it still equals `65a664ba60093991e47766c80cb5c365847f04a9` unless explicit current promotion was authorised;
-10. only then call D1 closed.
-
-After D1 closes, D2 begins by re-reading the Phase D sections of the controlling specification/map and auditing:
-
-- `GoalDirectedHostAgentOrchestrator`;
-- `HostAgentOrchestrator`;
-- current 17-tool descriptors/runtime/types;
-- authoritative inventory state and shopping requirement structures;
-- receipts/provenance/revision semantics;
-- D1 `CustomerUnderstanding` contracts/tests.
+2. require newest competition-build run `head_sha` to match that exact closure head and conclusion `success`;
+3. require the full backend/application, dependency-audit, production-build, browser and source-artifact steps to have passed;
+4. re-fetch `main` and require it still equals `65a664ba60093991e47766c80cb5c365847f04a9` unless explicit current promotion was authorised;
+5. then begin D2 by re-reading the Phase D sections of the controlling specification/map and auditing:
+   - `GoalDirectedHostAgentOrchestrator`;
+   - `HostAgentOrchestrator`;
+   - current 17-tool descriptors/runtime/types;
+   - authoritative inventory state and shopping requirement structures;
+   - receipts/provenance/revision semantics;
+   - D1 `CustomerUnderstanding` contracts/tests.
 
 D2 must define the exact authoritative inventory-coverage contract before implementing any new tool. The preferred current design is `confirm_inventory_coverage`, but the name/schema/risk semantics remain subject to that source audit; do not add it mechanically.
 
